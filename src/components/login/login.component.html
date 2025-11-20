@@ -1,0 +1,146 @@
+<div class="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="flex justify-center items-center mb-8">
+       <svg class="w-12 h-12 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+       </svg>
+       <h1 class="ml-4 text-3xl font-bold text-slate-800 dark:text-white">{{ languageService.T('botIA') }} Admin</h1>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-lg p-8">
+      <h2 class="text-2xl font-bold text-center text-slate-800 dark:text-slate-200 mb-2">
+        @switch (mode()) {
+          @case ('login') { {{ languageService.T('loginTitle') }} }
+          @case ('register') { {{ languageService.T('createAccountTitle') }} }
+          @case ('forgot') { {{ languageService.T('resetPasswordTitle') }} }
+        }
+      </h2>
+
+      @if (mode() === 'forgot') {
+        <p class="text-center text-slate-500 dark:text-slate-400 mb-6 text-sm">{{ languageService.T('resetPasswordInstructions') }}</p>
+      }
+
+      @if(errorMessage()) {
+        <div class="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 p-3 rounded-md mb-4 text-sm animate-pop-in">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      @if(resetEmailSent()) {
+        <div class="bg-green-100 dark:bg-green-900/50 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 p-3 rounded-md mb-4 text-sm animate-pop-in">
+          {{ resetEmailSent() }}
+        </div>
+      }
+      
+      <!-- Login / Register Forms -->
+      @if (mode() !== 'forgot') {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+          <div class="mb-4">
+            <label for="email" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('emailAddressLabel') }}</label>
+            <input type="email" id="email" formControlName="email"
+                   class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                   [class.border-red-500]="form.controls.email.invalid && form.controls.email.touched"
+                   [placeholder]="languageService.T('emailPlaceholder')">
+            @if (form.controls.email.invalid && form.controls.email.touched) {
+              <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ languageService.T('validEmailError') }}</p>
+            }
+          </div>
+          
+          <div class="mb-2">
+            <label for="password" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('passwordLabel') }}</label>
+             <input type="password" id="password" formControlName="password"
+                   class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                   [class.border-red-500]="form.controls.password.invalid && form.controls.password.touched"
+                   [placeholder]="languageService.T('passwordPlaceholder')">
+              @if (mode() === 'register' && form.controls.password.errors?.['minlength']) {
+                <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ languageService.T('passwordMinLengthError') }}</p>
+              }
+          </div>
+
+          @if(mode() === 'login') {
+            <div class="flex items-center justify-end mb-4">
+              <button type="button" (click)="setMode('forgot')" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
+                {{ languageService.T('forgotPassword') }}
+              </button>
+            </div>
+          } @else {
+            <div class="mb-6"></div>
+          }
+          
+          <div>
+            <button type="submit" [disabled]="form.invalid || isLoading()" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center">
+              @if(isLoading()) {
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              }
+              <span>{{ isLoading() ? languageService.T('processing') : languageService.T(mode() === 'login' ? 'signInButton' : 'createAccountButton') }}</span>
+            </button>
+          </div>
+        </form>
+
+        @if (mode() === 'login') {
+            @if (false) {
+              <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center" aria-hidden="true"><div class="w-full border-t border-slate-300 dark:border-slate-600"></div></div>
+                <div class="relative flex justify-center text-sm"><span class="px-2 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400">{{ languageService.T('orContinueWith') }}</span></div>
+              </div>
+              <div>
+                <button type="button" (click)="onGoogleSignIn()" class="w-full flex items-center justify-center py-3 px-4 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm bg-white dark:bg-slate-700 text-sm font-medium text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-50 dark:focus:ring-offset-slate-800 focus:ring-indigo-500 transition-colors duration-200">
+                  <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M47.532 24.552c0-1.566-.14-3.09-.408-4.552H24.48v8.616h13.02c-.564 2.784-2.184 5.16-4.668 6.78l.006.036 7.02 5.436.03.006c4.11-3.792 6.504-9.39 6.504-16.32z" fill="#4285F4"/><path d="M24.48 48c6.456 0 11.94-2.136 15.924-5.784l-7.05-5.442c-2.136 1.44-4.884 2.292-7.872 2.292-6.048 0-11.16-4.08-12.996-9.6H4.212v5.616c3.816 7.596 11.484 12.816 20.268 12.816z" fill="#34A853"/><path d="M11.484 28.8c-.468-1.44-.732-2.952-.732-4.5s.264-3.06.732-4.5V14.184H4.212C2.856 16.92 2 20.352 2 24.036c0 3.684.856 7.116 2.214 9.852l7.27-5.688z" fill="#FBBC05"/><path d="M24.48 9.924c3.492 0 6.6 1.2 9.072 3.6l6.264-6.264C36.42 2.856 30.936 0 24.48 0 15.7 0 8.028 5.22 4.212 12.816l7.272 5.616c1.836-5.52 6.948-9.528 12.996-9.528z" fill="#EA4335"/></svg>
+                  <span>{{ languageService.T('signInWithGoogle') }}</span>
+                </button>
+              </div>
+            }
+        }
+      }
+
+      <!-- Forgot Password Form -->
+      @if (mode() === 'forgot') {
+        <form [formGroup]="form" (ngSubmit)="onForgotPasswordSubmit()">
+          <div class="mb-6">
+            <label for="email" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('emailAddressLabel') }}</label>
+            <input type="email" id="email" formControlName="email"
+                   class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                   [class.border-red-500]="form.controls.email.invalid && form.controls.email.touched"
+                   [placeholder]="languageService.T('emailPlaceholder')">
+            @if (form.controls.email.invalid && form.controls.email.touched) {
+              <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ languageService.T('validEmailError') }}</p>
+            }
+          </div>
+          <button type="submit" [disabled]="form.invalid || isLoading()" 
+                  class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center">
+            @if(isLoading()) {
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            }
+            <span>{{ isLoading() ? languageService.T('processing') : languageService.T('sendResetLinkButton') }}</span>
+          </button>
+        </form>
+      }
+
+      <div class="text-center mt-6">
+        @if (mode() === 'login') {
+          <button (click)="setMode('register')" class="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
+            {{ languageService.T('needAccount') }}
+          </button>
+        }
+        @if (mode() === 'register') {
+          <button (click)="setMode('login')" class="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
+            {{ languageService.T('haveAccount') }}
+          </button>
+        }
+         @if (mode() === 'forgot') {
+          <button (click)="setMode('login')" class="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
+            {{ languageService.T('backToLogin') }}
+          </button>
+        }
+      </div>
+
+    </div>
+  </div>
+</div>

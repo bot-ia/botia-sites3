@@ -1,0 +1,34 @@
+<div class="animate-fade-in">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white">{{ languageService.T('specialLinks') }}</h1>
+  </div>
+
+  @if (isLoading()) {
+    <div class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('loadingLinks') }}</div>
+  } @else {
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+            <tr>
+              <th class="p-4 font-semibold">{{ languageService.T('label') }}</th>
+              <th class="p-4 font-semibold">{{ languageService.T('url') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (link of links(); track link.id) {
+              <tr class="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150">
+                <td class="p-4 font-medium">{{ link.label }}</td>
+                <td class="p-4 text-indigo-500 dark:text-indigo-400 truncate"><a [href]="link.url" target="_blank" class="hover:underline">{{ link.url }}</a></td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="2" class="text-center p-8 text-slate-500">{{ languageService.T('noLinksFound') }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

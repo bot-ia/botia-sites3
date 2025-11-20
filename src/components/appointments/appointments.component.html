@@ -1,0 +1,146 @@
+<div class="animate-fade-in">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-white">{{ languageService.T('appointments') }}</h1>
+    @if(activeTab() === 'appointments') {
+      <button (click)="openModal('appointment')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        {{ languageService.T('newAppointment') }}
+      </button>
+    }
+  </div>
+
+  <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-700">
+      <button (click)="changeTab('appointments')" [class.bg-gray-900]="activeTab() === 'appointments'" [class.text-indigo-400]="activeTab() === 'appointments'" class="px-4 py-3 font-semibold text-gray-400 hover:bg-gray-700 flex-1">{{ languageService.T('appointments') }}</button>
+      <button (click)="changeTab('services')" [class.bg-gray-900]="activeTab() === 'services'" [class.text-indigo-400]="activeTab() === 'services'" class="px-4 py-3 font-semibold text-gray-400 hover:bg-gray-700 flex-1">{{ languageService.T('services') }}</button>
+      <button (click)="changeTab('staff')" [class.bg-gray-900]="activeTab() === 'staff'" [class.text-indigo-400]="activeTab() === 'staff'" class="px-4 py-3 font-semibold text-gray-400 hover:bg-gray-700 flex-1">{{ languageService.T('staff') }}</button>
+    </div>
+
+    @if (isLoading()) {
+      <div class="p-8 text-center text-gray-400">{{ languageService.T('loading') }}</div>
+    } @else {
+      <!-- Tab Content -->
+      <div class="p-6">
+        @switch (activeTab()) {
+          @case ('appointments') {
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-4 items-center mb-4 p-4 bg-gray-900/50 rounded-lg">
+              <div>
+                <label class="text-sm font-medium text-gray-400 mr-2">{{ languageService.T('appointmentTime') }}:</label>
+                <input type="date" [ngModel]="filterDate()" (ngModelChange)="filterDate.set($event)" class="bg-gray-700 text-white rounded-md p-2 border border-gray-600">
+              </div>
+              <div>
+                <label class="text-sm font-medium text-gray-400 mr-2">{{ languageService.T('staffMember') }}:</label>
+                <select [ngModel]="filterStaffId()" (ngModelChange)="filterStaffId.set($event)" class="bg-gray-700 text-white rounded-md p-2 border border-gray-600">
+                  <option value="all">{{ languageService.T('allTypes') }}</option>
+                  @for(staff of staffMembers(); track staff.id) { <option [value]="staff.id">{{ staff.name }}</option> }
+                </select>
+              </div>
+            </div>
+            <!-- Appointments Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left"><thead class="bg-gray-900/70 text-sm text-gray-400"><tr>
+                <th class="p-3 font-semibold">{{ languageService.T('appointmentTime') }}</th><th class="p-3 font-semibold">{{ languageService.T('clientName') }}</th>
+                <th class="p-3 font-semibold">{{ languageService.T('service') }}</th><th class="p-3 font-semibold">{{ languageService.T('staffMember') }}</th>
+                <th class="p-3 font-semibold">{{ languageService.T('status') }}</th><th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
+              </tr></thead>
+              <tbody>
+                @for(appt of filteredAppointments(); track appt.id) {
+                  <tr class="border-t border-gray-700"><td class="p-3">{{ formatTime(appt.appointmentTime) }}</td><td class="p-3">{{ appt.clientName }}</td>
+                    <td class="p-3">{{ getServiceName(appt.serviceId) }}</td><td class="p-3">{{ getStaffName(appt.staffMemberId) }}</td>
+                    <td class="p-3"><span class="px-2 py-1 text-xs rounded-full" 
+                      [class.bg-blue-900]="appt.status === 'Scheduled'" [class.text-blue-300]="appt.status === 'Scheduled'"
+                      [class.bg-teal-900]="appt.status === 'Confirmed'" [class.text-teal-300]="appt.status === 'Confirmed'"
+                      [class.bg-green-900]="appt.status === 'Completed'" [class.text-green-300]="appt.status === 'Completed'"
+                      [class.bg-red-900]="appt.status === 'Cancelled'" [class.text-red-300]="appt.status === 'Cancelled'"
+                    >{{ languageService.T('appointmentStatus_' + appt.status) }}</span></td>
+                    <td class="p-3 text-right"><button (click)="openModal('appointment', appt)" class="text-blue-400 hover:text-blue-300 mr-4 text-sm">{{ languageService.T('edit') }}</button><button (click)="deleteItem('appointment', appt)" class="text-red-400 hover:text-red-300 text-sm">{{ languageService.T('delete') }}</button></td></tr>
+                } @empty { <tr><td colspan="6" class="p-8 text-center text-gray-500">{{ languageService.T('noAppointmentsFound') }}</td></tr> }
+              </tbody></table>
+            </div>
+          }
+          @case ('services') {
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">{{ languageService.T('services') }}</h2>
+              <button (click)="openModal('service')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center"><svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>{{ languageService.T('newService') }}</button>
+            </div>
+            <div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-gray-900/70 text-sm text-gray-400"><tr>
+              <th class="p-3 font-semibold">{{ languageService.T('serviceName') }}</th><th class="p-3 font-semibold">{{ languageService.T('duration') }}</th><th class="p-3 font-semibold">{{ languageService.T('price') }}</th><th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th></tr></thead>
+              <tbody>
+                @for(service of services(); track service.id) {
+                  <tr class="border-t border-gray-700"><td class="p-3">{{ service.name }}</td><td class="p-3">{{ service.duration }} min</td><td class="p-3">{{ service.price | currency:'USD':'symbol':'1.0-0' }}</td>
+                    <td class="p-3 text-right"><button (click)="openModal('service', service)" class="text-blue-400 hover:text-blue-300 mr-4 text-sm">{{ languageService.T('edit') }}</button><button (click)="deleteItem('service', service)" class="text-red-400 hover:text-red-300 text-sm">{{ languageService.T('delete') }}</button></td></tr>
+                } @empty { <tr><td colspan="4" class="p-8 text-center text-gray-500">{{ languageService.T('noServicesFound') }}</td></tr> }
+              </tbody></table></div>
+          }
+          @case ('staff') {
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">{{ languageService.T('staff') }}</h2>
+              <button (click)="openModal('staff')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center"><svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>{{ languageService.T('newStaffMember') }}</button>
+            </div>
+             <div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-gray-900/70 text-sm text-gray-400"><tr>
+              <th class="p-3 font-semibold">{{ languageService.T('staffName') }}</th><th class="p-3 font-semibold">{{ languageService.T('specialty') }}</th><th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th></tr></thead>
+              <tbody>
+                @for(staff of staffMembers(); track staff.id) {
+                  <tr class="border-t border-gray-700"><td class="p-3">{{ staff.name }}</td><td class="p-3">{{ staff.specialty }}</td>
+                    <td class="p-3 text-right"><button (click)="openModal('staff', staff)" class="text-blue-400 hover:text-blue-300 mr-4 text-sm">{{ languageService.T('edit') }}</button><button (click)="deleteItem('staff', staff)" class="text-red-400 hover:text-red-300 text-sm">{{ languageService.T('delete') }}</button></td></tr>
+                } @empty { <tr><td colspan="3" class="p-8 text-center text-gray-500">{{ languageService.T('noStaffFound') }}</td></tr> }
+              </tbody></table></div>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- MODAL -->
+@if (isModalOpen()) {
+  <div class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 animate-fade-in-fast">
+    <div class="bg-gray-800 rounded-lg shadow-2xl p-8 w-full max-w-lg border border-gray-600">
+      <form #form="ngForm" (ngSubmit)="saveModal()">
+        @switch (modalType()) {
+          @case ('appointment') {
+            @if(editingAppointment(); as appt) {
+              <h2 class="text-2xl font-bold mb-6">{{ languageService.T(appt.id ? 'editAppointment' : 'createAppointment') }}</h2>
+              <div class="space-y-4">
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('clientName') }}</label><input type="text" [(ngModel)]="appt.clientName" name="clientName" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required></div>
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('clientContact') }}</label><input type="text" [(ngModel)]="appt.clientContact" name="clientContact" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required></div>
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('appointmentTime') }}</label><input type="datetime-local" [(ngModel)]="appt.appointmentTime" name="appointmentTime" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required></div>
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('service') }}</label><select [(ngModel)]="appt.serviceId" name="serviceId" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required><option [value]="undefined" disabled>Select...</option>@for(s of services(); track s.id){<option [value]="s.id">{{s.name}}</option>}</select></div>
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('staffMember') }}</label><select [(ngModel)]="appt.staffMemberId" name="staffMemberId" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required><option [value]="undefined" disabled>Select...</option>@for(s of staffMembers(); track s.id){<option [value]="s.id">{{s.name}}</option>}</select></div>
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('status') }}</label><select [(ngModel)]="appt.status" name="status" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required>@for(s of appointmentStatuses; track s){<option [value]="s">{{ languageService.T('appointmentStatus_' + s) }}</option>}</select></div>
+              </div>
+            }
+          }
+          @case ('service') {
+            @if(editingService(); as service) {
+              <h2 class="text-2xl font-bold mb-6">{{ languageService.T(service.id ? 'editService' : 'createService') }}</h2>
+              <div class="space-y-4">
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('serviceName') }}</label><input type="text" [(ngModel)]="service.name" name="name" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required></div>
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('kbDescription') }}</label><textarea [(ngModel)]="service.description" name="description" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600 h-24"></textarea></div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div><label class="block mb-2 font-semibold">{{ languageService.T('duration') }}</label><input type="number" [(ngModel)]="service.duration" name="duration" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required></div>
+                  <div><label class="block mb-2 font-semibold">{{ languageService.T('price') }}</label><input type="number" [(ngModel)]="service.price" name="price" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required></div>
+                </div>
+              </div>
+            }
+          }
+          @case ('staff') {
+             @if(editingStaff(); as staff) {
+              <h2 class="text-2xl font-bold mb-6">{{ languageService.T(staff.id ? 'editStaffMember' : 'createStaffMember') }}</h2>
+              <div class="space-y-4">
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('staffName') }}</label><input type="text" [(ngModel)]="staff.name" name="name" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required></div>
+                <div><label class="block mb-2 font-semibold">{{ languageService.T('specialty') }}</label><input type="text" [(ngModel)]="staff.specialty" name="specialty" class="w-full bg-gray-700 p-2 rounded-md border border-gray-600" required></div>
+              </div>
+            }
+          }
+        }
+        <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-700">
+          <button type="button" (click)="closeModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+          <button type="submit" [disabled]="form.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-500">{{ languageService.T('save') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

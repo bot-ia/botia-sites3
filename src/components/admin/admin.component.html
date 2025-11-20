@@ -1,0 +1,535 @@
+<div class="animate-fade-in">
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white">{{ languageService.T('adminTitle') }}</h1>
+    
+    <div class="flex items-center gap-4">
+      <button (click)="openBotModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center shadow hover:shadow-lg">
+        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        {{ languageService.T('newBot') }}
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('loading') }}</div>
+  } @else {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Bots List -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+           <h2 class="text-xl font-semibold mb-2 text-slate-900 dark:text-white">{{ languageService.T('allBots') }}</h2>
+           <input 
+              type="text" 
+              [placeholder]="languageService.T('searchByBot')"
+              class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              [value]="botSearchTerm()"
+              (input)="botSearchTerm.set($any($event.target).value)">
+        </div>
+        <!-- Table Header -->
+        <div class="grid grid-cols-10 gap-4 p-4 bg-slate-50 dark:bg-slate-900/70 font-semibold text-sm text-slate-500 dark:text-slate-400 sticky top-0">
+          <div class="col-span-4 cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors" (click)="updateBotSort('nombre')">
+            <div class="flex items-center">
+              <span>{{ languageService.T('botCompany') }}</span>
+              @if (botSort().column === 'nombre') {
+                <svg class="w-4 h-4 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="botSort().direction === 'asc' ? 'M19.5 8.25l-7.5 7.5-7.5-7.5' : 'M4.5 15.75l7.5-7.5 7.5 7.5'" />
+                </svg>
+              }
+            </div>
+          </div>
+          <div class="col-span-3 cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors" (click)="updateBotSort('bot_id')">
+            <div class="flex items-center">
+              <span>{{ languageService.T('botId') }}</span>
+              @if (botSort().column === 'bot_id') {
+                <svg class="w-4 h-4 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="botSort().direction === 'asc' ? 'M19.5 8.25l-7.5 7.5-7.5-7.5' : 'M4.5 15.75l7.5-7.5 7.5 7.5'" />
+                </svg>
+              }
+            </div>
+          </div>
+          <div class="col-span-1 cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors" (click)="updateBotSort('status')">
+             <div class="flex items-center">
+              <span>{{ languageService.T('status') }}</span>
+              @if (botSort().column === 'status') {
+                <svg class="w-4 h-4 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="botSort().direction === 'asc' ? 'M19.5 8.25l-7.5 7.5-7.5-7.5' : 'M4.5 15.75l7.5-7.5 7.5 7.5'" />
+                </svg>
+              }
+            </div>
+          </div>
+          <div class="col-span-2 text-right">{{ languageService.T('actions') }}</div>
+        </div>
+        <div class="overflow-y-auto max-h-[calc(100vh-20rem)]">
+          @for (bot of filteredAndSortedBots(); track bot.bot_id) {
+            <div class="grid grid-cols-10 gap-4 border-b border-slate-200 dark:border-slate-700 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50" 
+                 [class.bg-indigo-50]="selectedBot()?.bot_id === bot.bot_id"
+                 [class.dark:bg-indigo-900/40]="selectedBot()?.bot_id === bot.bot_id"
+                 (click)="selectBot(bot)">
+              <div class="col-span-4 self-center">
+                <h3 class="font-semibold text-slate-800 dark:text-white">{{ bot.nombre }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ bot.company }}</p>
+              </div>
+              <div class="col-span-3 text-sm text-slate-500 dark:text-slate-400 font-mono self-center">{{ bot.bot_id }}</div>
+              <div class="col-span-1 self-center">
+                  <span class="px-3 py-1 text-xs font-medium rounded-full"
+                        [class.bg-green-100]="bot.status === 'Active'" [class.dark:bg-green-900]="bot.status === 'Active'"
+                        [class.text-green-800]="bot.status === 'Active'" [class.dark:text-green-300]="bot.status === 'Active'"
+                        [class.bg-red-100]="bot.status === 'Inactive'" [class.dark:bg-red-900]="bot.status === 'Inactive'"
+                        [class.text-red-800]="bot.status === 'Inactive'" [class.dark:text-red-300]="bot.status === 'Inactive'">
+                    {{ languageService.T(bot.status.toLowerCase()) }}
+                  </span>
+              </div>
+              <div class="col-span-2 text-right self-center">
+                  <button (click)="requestCloneBot(bot); $event.stopPropagation()" class="text-teal-500 hover:text-teal-400 mr-2">{{ languageService.T('clone') }}</button>
+                  <button (click)="openBotModal(bot); $event.stopPropagation()" class="text-blue-500 hover:text-blue-400 mr-2">{{ languageService.T('edit') }}</button>
+                  <button (click)="requestDeleteBot(bot); $event.stopPropagation()" class="text-red-500 hover:text-red-400">{{ languageService.T('delete') }}</button>
+              </div>
+            </div>
+          } @empty {
+            <p class="p-4 text-slate-500">{{ languageService.T('noBotsMatchSearch') }}</p>
+          }
+        </div>
+      </div>
+
+      <!-- Management Panel -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 flex flex-col">
+         @if (selectedBot(); as bot) {
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex items-start gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                {{ languageService.T('manageBotInTabs') }}
+              </p>
+            </div>
+            <div class="animate-fade-in-fast flex flex-col flex-grow">
+              <!-- Tabs -->
+              <div class="flex border-b border-slate-200 dark:border-slate-700">
+                <button (click)="changeTab('users')" [class.bg-white]="selectedTab() === 'users'" [class.dark:bg-slate-800]="selectedTab() === 'users'" [class.text-indigo-600]="selectedTab() === 'users'" [class.dark:text-indigo-400]="selectedTab() === 'users'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 flex-1 transition-colors">{{ languageService.T('userAccess') }}</button>
+                <button (click)="changeTab('prompts')" [class.bg-white]="selectedTab() === 'prompts'" [class.dark:bg-slate-800]="selectedTab() === 'prompts'" [class.text-indigo-600]="selectedTab() === 'prompts'" [class.dark:text-indigo-400]="selectedTab() === 'prompts'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 flex-1 transition-colors">{{ languageService.T('prompts') }}</button>
+                <button (click)="changeTab('links')" [class.bg-white]="selectedTab() === 'links'" [class.dark:bg-slate-800]="selectedTab() === 'links'" [class.text-indigo-600]="selectedTab() === 'links'" [class.dark:text-indigo-400]="selectedTab() === 'links'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 flex-1 transition-colors">{{ languageService.T('specialLinks') }}</button>
+                <button (click)="changeTab('knowledge')" [class.bg-white]="selectedTab() === 'knowledge'" [class.dark:bg-slate-800]="selectedTab() === 'knowledge'" [class.text-indigo-600]="selectedTab() === 'knowledge'" [class.dark:text-indigo-400]="selectedTab() === 'knowledge'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 flex-1 transition-colors">{{ languageService.T('knowledgeBase') }}</button>
+              </div>
+              
+              <div class="flex flex-col flex-grow">
+              @switch (selectedTab()) {
+                @case ('users') {
+                  <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+                    <h2 class="text-xl font-semibold mb-2 text-slate-800 dark:text-white">{{ languageService.T('manageAccessFor') }} <span class="text-indigo-500 dark:text-indigo-400">{{ bot.nombre }}</span></h2>
+                    <input type="text" [placeholder]="languageService.T('searchByEmail')" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" [value]="userSearchTerm()" (input)="userSearchTerm.set($any($event.target).value)">
+                  </div>
+                  <div class="flex justify-between p-4 bg-slate-50 dark:bg-slate-900/70 font-semibold text-sm text-slate-500 dark:text-slate-400">
+                      <div class="cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors" (click)="updateUserSort('email')">
+                          <div class="flex items-center"><span>{{ languageService.T('email') }}</span>
+                              @if (userSort().column === 'email') { <svg class="w-4 h-4 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" [attr.d]="userSort().direction === 'asc' ? 'M19.5 8.25l-7.5 7.5-7.5-7.5' : 'M4.5 15.75l7.5-7.5 7.5 7.5'" /></svg> }
+                          </div>
+                      </div>
+                      <span>{{ languageService.T('access') }}</span>
+                  </div>
+                  <div class="overflow-y-auto flex-grow">
+                    @for (user of filteredAndSortedUsers(); track user.id) {
+                      <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                        <span class="text-slate-700 dark:text-slate-300">{{ user.email }}</span>
+                        <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" [checked]="userHasAccess(user)" (change)="onAccessChange(user, $event)" class="sr-only peer"><div class="w-11 h-6 bg-slate-300 dark:bg-slate-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div></label>
+                      </div>
+                    } @empty { <p class="p-4 text-slate-500">{{ languageService.T('noUsersMatchSearch') }}</p> }
+                  </div>
+                }
+                @case ('prompts') {
+                  <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-slate-800 dark:text-white">{{ languageService.T('managePromptsFor') }} <span class="text-indigo-500 dark:text-indigo-400">{{ bot.nombre }}</span></h2>
+                    <button (click)="openPromptModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow hover:shadow-lg"><svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>{{ languageService.T('newPrompt') }}</button>
+                  </div>
+                  <div class="overflow-y-auto flex-grow">
+                    @if(prompts().length > 0) {
+                      <table class="w-full text-left"><thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400"><tr><th class="p-3 font-semibold">{{ languageService.T('promptId') }}</th><th class="p-3 font-semibold">{{ languageService.T('contentPreview') }}</th><th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th></tr></thead>
+                        <tbody>
+                          @for(prompt of prompts(); track prompt.id) {
+                            <tr class="border-t border-slate-200 dark:border-slate-700"><td class="p-3 font-mono text-indigo-500 dark:text-indigo-400 text-sm">{{ prompt.promptId }}</td><td class="p-3 text-slate-600 dark:text-slate-300 max-w-xs truncate text-sm">{{ prompt.content }}</td><td class="p-3 text-right"><button (click)="openPromptModal(prompt)" class="text-blue-500 hover:text-blue-400 mr-4 text-sm">{{ languageService.T('edit') }}</button><button (click)="requestDelete('prompt', prompt)" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button></td></tr>
+                          }
+                        </tbody>
+                      </table>
+                    } @else {
+                      <div class="text-center p-8 flex flex-col items-center justify-center h-full">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-400 dark:text-slate-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 5.523-4.477 10-10 10S1 17.523 1 12 5.477 2 12 2s10 4.477 10 10z" />
+                          </svg>
+                          <p class="text-slate-500 mb-4">{{ languageService.T('noPromptsFound') }}</p>
+                          <button (click)="openPromptModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center shadow hover:shadow-lg">
+                            <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                            {{ languageService.T('newPrompt') }}
+                          </button>
+                      </div>
+                    }
+                  </div>
+                }
+                @case ('links') {
+                  <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-slate-800 dark:text-white">{{ languageService.T('manageLinksFor') }} <span class="text-indigo-500 dark:text-indigo-400">{{ bot.nombre }}</span></h2>
+                    <button (click)="openLinkModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow hover:shadow-lg"><svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>{{ languageService.T('newLink') }}</button>
+                  </div>
+                  <div class="overflow-y-auto flex-grow">
+                    @if(specialLinks().length > 0) {
+                      <table class="w-full text-left"><thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400"><tr><th class="p-3 font-semibold">{{ languageService.T('label') }}</th><th class="p-3 font-semibold">{{ languageService.T('url') }}</th><th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th></tr></thead>
+                        <tbody>
+                          @for(link of specialLinks(); track link.id) {
+                          <tr class="border-t border-slate-200 dark:border-slate-700"><td class="p-3 font-medium text-sm">{{ link.label }}</td><td class="p-3 text-indigo-500 dark:text-indigo-400 truncate text-sm"><a [href]="link.url" target="_blank" class="hover:underline">{{ link.url }}</a></td><td class="p-3 text-right"><button (click)="openLinkModal(link)" class="text-blue-500 hover:text-blue-400 mr-4 text-sm">{{ languageService.T('edit') }}</button><button (click)="requestDelete('link', link)" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button></td></tr>
+                          }
+                        </tbody>
+                      </table>
+                    } @else {
+                      <div class="text-center p-8 flex flex-col items-center justify-center h-full">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-400 dark:text-slate-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                          </svg>
+                          <p class="text-slate-500 mb-4">{{ languageService.T('noLinksFound') }}</p>
+                          <button (click)="openLinkModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center shadow hover:shadow-lg">
+                            <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                            {{ languageService.T('newLink') }}
+                          </button>
+                      </div>
+                    }
+                  </div>
+                }
+                 @case ('knowledge') {
+                  <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-slate-800 dark:text-white">{{ languageService.T('manageKnowledgeFor') }} <span class="text-indigo-500 dark:text-indigo-400">{{ bot.nombre }}</span></h2>
+                    <button (click)="openKnowledgeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow hover:shadow-lg"><svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>{{ languageService.T('newKnowledgeItem') }}</button>
+                  </div>
+                  <div class="overflow-y-auto flex-grow">
+                    @if (knowledgeItems().length > 0) {
+                      <table class="w-full text-left"><thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400"><tr><th class="p-3 font-semibold">{{ languageService.T('kbTitle') }}</th><th class="p-3 font-semibold">{{ languageService.T('kbEndpointURL') }}</th><th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th></tr></thead>
+                        <tbody>
+                          @for(item of knowledgeItems(); track item.id) {
+                          <tr class="border-t border-slate-200 dark:border-slate-700"><td class="p-3 font-medium text-sm">{{ item.title }}</td><td class="p-3 text-indigo-500 dark:text-indigo-400 truncate text-sm font-mono">{{ item.n8nUrl }}</td><td class="p-3 text-right"><button (click)="openKnowledgeModal(item)" class="text-blue-500 hover:text-blue-400 mr-4 text-sm">{{ languageService.T('edit') }}</button><button (click)="requestDelete('knowledge', item)" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button></td></tr>
+                          }
+                        </tbody>
+                      </table>
+                    } @else {
+                      <div class="text-center p-8 flex flex-col items-center justify-center h-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-400 dark:text-slate-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.355a12.06 12.06 0 0 0-4.5 0m4.5 2.355a12.059 12.059 0 0 1-4.5 0m0 0a12.06 12.06 0 0 1-4.5 0m7.5-16.12a12.06 12.06 0 0 1-4.5 0m0 0a12.06 12.06 0 0 0-4.5 0m11.25 7.478a12.059 12.059 0 0 0-4.5 0m3.75 2.355a12.059 12.059 0 0 1-4.5 0m4.5 2.355a12.059 12.059 0 0 0-4.5 0m-3.75-16.12a12.059 12.059 0 0 0-4.5 0m0 0a12.059 12.059 0 0 1-4.5 0" />
+                        </svg>
+                        <p class="text-slate-500 mb-4">{{ languageService.T('noKnowledgeItems') }}</p>
+                        <button (click)="openKnowledgeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center shadow hover:shadow-lg">
+                          <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                          {{ languageService.T('newKnowledgeItem') }}
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              }
+              </div>
+            </div>
+         } @else {
+            <div class="flex items-center justify-center h-full">
+              <div class="text-center p-8 text-slate-500 dark:text-slate-400">
+                <svg class="w-16 h-16 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5M15 15l5.25 5.25" /></svg>
+                <h3 class="text-lg font-semibold">{{ languageService.T('selectBotToManage') }}</h3>
+                <p>{{ languageService.T('selectBotToManageDesc') }}</p>
+              </div>
+            </div>
+         }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Bot Clone Modal -->
+@if (isCloneModalOpen() && botToClone(); as bot) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-lg border border-slate-200 dark:border-slate-700 animate-pop-in">
+      <h2 class="text-2xl font-bold mb-2 text-slate-900 dark:text-white">{{ languageService.T('cloneBotTitle') }}</h2>
+      <p class="text-slate-500 dark:text-slate-400 mb-6">{{ languageService.T('cloneBotInstruction') }}</p>
+      
+      <div>
+        <label for="newBotIdForClone" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('botIdLabel') }}</label>
+        <input 
+          type="text" 
+          id="newBotIdForClone"
+          class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
+          [class.border-red-500]="cloneErrorMessage()"
+          [(ngModel)]="newBotIdForClone"
+          (keydown.enter)="confirmCloneBot()">
+        
+        @if(cloneErrorMessage()) {
+          <p class="text-red-500 dark:text-red-400 text-sm mt-2">{{ cloneErrorMessage() }}</p>
+        }
+      </div>
+
+      <div class="flex justify-end gap-4 mt-8">
+        <button type="button" (click)="cancelCloneBot()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button>
+        <button 
+          type="button" 
+          (click)="confirmCloneBot()" 
+          [disabled]="!newBotIdForClone()"
+          class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed transition-colors">
+            {{ languageService.T('clone') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Bot Editor Modal -->
+@if (isBotModalOpen() && editingBot(); as bot) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-5xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col animate-pop-in">
+      <h2 class="text-2xl font-bold mb-6 shrink-0 text-slate-900 dark:text-white">{{ languageService.T(isEditingExistingBot() ? 'editBot' : 'createBot') }}</h2>
+      <form #botForm="ngForm" (ngSubmit)="saveBot()" class="overflow-y-auto pr-4 -mr-4 text-slate-600 dark:text-slate-300">
+        
+        <!-- General Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div class="md:col-span-2">
+            <label for="botType" class="block font-semibold mb-2">{{ languageService.T('botType') }}</label>
+            <select id="botType" name="botType" [(ngModel)]="bot.botType" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+              @for(type of botTypes; track type) {
+                <option [value]="type">{{ languageService.T('botType_' + type) }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label for="bot_id" class="block font-semibold mb-2">{{ languageService.T('botIdLabel') }}</label>
+            <input type="text" id="bot_id" name="bot_id" #bot_id="ngModel" [(ngModel)]="bot.bot_id" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono disabled:opacity-50" [placeholder]="languageService.T('botIdPlaceholder')" [disabled]="isEditingExistingBot()" maxlength="30" required>
+          </div>
+          <div>
+            <label for="nombre" class="block font-semibold mb-2">{{ languageService.T('botNameLabel') }}</label>
+            <input type="text" id="nombre" name="nombre" #nombre="ngModel" [(ngModel)]="bot.nombre" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" [placeholder]="languageService.T('botNamePlaceholder')" required>
+          </div>
+          <div>
+            <label for="botCompany" class="block font-semibold mb-2">{{ languageService.T('companyLabel') }}</label>
+            <input type="text" id="botCompany" name="company" #company="ngModel" [(ngModel)]="bot.company" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" [placeholder]="languageService.T('companyPlaceholder')" required>
+          </div>
+          <div>
+            <label for="botStatus" class="block font-semibold mb-2">{{ languageService.T('status') }}</label>
+            <select id="botStatus" name="status" [(ngModel)]="bot.status" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="Active">{{ languageService.T('active') }}</option>
+              <option value="Inactive">{{ languageService.T('inactive') }}</option>
+            </select>
+          </div>
+          @if (bot.botType === 'product') {
+            <div class="md:col-span-2 animate-fade-in-fast">
+              <label for="menuTitle" class="block font-semibold mb-2">{{ languageService.T('portfolioTitle') }}</label>
+              <input type="text" id="menuTitle" name="portfolioMenuTitle" [(ngModel)]="bot.portfolioMenuTitle" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" [placeholder]="languageService.T('portfolioTitlePlaceholder')" required>
+            </div>
+          }
+        </div>
+
+        <!-- API Keys and Config -->
+        <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              <div class="md:col-span-2">
+                <label for="key_openai" class="block font-semibold mb-2">{{ languageService.T('keyOpenaiLabel') }}</label>
+                <input type="password" id="key_openai" name="key_openai" #key_openai="ngModel" [(ngModel)]="bot.key_openai" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono" required>
+              </div>
+              <div>
+                <label for="key_qdrant" class="block font-semibold mb-2">{{ languageService.T('keyQdrantLabel') }}</label>
+                <input type="password" id="key_qdrant" name="key_qdrant" #key_qdrant="ngModel" [(ngModel)]="bot.key_qdrant" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono" required>
+              </div>
+              <div>
+                <label for="modelo_ia" class="block font-semibold mb-2">{{ languageService.T('modeloIaLabel') }}</label>
+                <input type="text" id="modelo_ia" name="modelo_ia" #modelo_ia="ngModel" [(ngModel)]="bot.modelo_ia" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600" required>
+              </div>
+              <div class="md:col-span-2">
+                <label for="prompt_vision" class="block font-semibold mb-2">{{ languageService.T('promptVisionLabel') }}</label>
+                <textarea id="prompt_vision" name="prompt_vision" #prompt_vision="ngModel" [(ngModel)]="bot.prompt_vision" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 h-24 resize-y" required></textarea>
+              </div>
+            </div>
+        </div>
+
+        <!-- Integrations -->
+        <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+            <h3 class="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-4 col-span-full">Integraciones</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div>
+                  <label for="meta_token" class="block font-semibold mb-2">{{ languageService.T('metaTokenLabel') }}</label>
+                  <input type="password" id="meta_token" name="meta_token" #meta_token="ngModel" [(ngModel)]="bot.meta_token" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono" required>
+                </div>
+                <div>
+                  <label for="waba_id" class="flex items-center font-semibold mb-2">
+                    <span>{{ languageService.T('wabaIdLabel') }}</span>
+                    <span class="ml-2" [title]="languageService.T('wabaIdTooltip')">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </span>
+                  </label>
+                  <input type="text" id="waba_id" name="waba_id" #waba_id="ngModel" [(ngModel)]="bot.waba_id" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono" required>
+                </div>
+                <div>
+                  <label for="key_chatwood" class="block font-semibold mb-2">{{ languageService.T('keyChatwoodLabel') }}</label>
+                  <input type="password" id="key_chatwood" name="key_chatwood" #key_chatwood="ngModel" [(ngModel)]="bot.key_chatwood" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono" required>
+                </div>
+                <div>
+                  <label for="account_id_chatwood" class="block font-semibold mb-2">{{ languageService.T('accountIdChatwoodLabel') }}</label>
+                  <input type="number" id="account_id_chatwood" name="account_id_chatwood" [(ngModel)]="bot.account_id_chatwood" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600">
+                </div>
+                 <div>
+                  <label for="url_espo" class="block font-semibold mb-2">{{ languageService.T('urlEspoLabel') }}</label>
+                  <input type="url" id="url_espo" name="url_espo" [(ngModel)]="bot.url_espo" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label for="api_key_espo" class="block font-semibold mb-2">{{ languageService.T('apiKeyEspoLabel') }}</label>
+                  <input type="password" id="api_key_espo" name="api_key_espo" [(ngModel)]="bot.api_key_espo" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono">
+                </div>
+                 <div>
+                  <label for="url_agent_ia" class="block font-semibold mb-2">{{ languageService.T('urlAgentIaLabel') }}</label>
+                  <input type="url" id="url_agent_ia" name="url_agent_ia" [(ngModel)]="bot.url_agent_ia" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600">
+                </div>
+            </div>
+        </div>
+
+        <!-- Functionalities -->
+        <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+            <h3 class="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-4 col-span-full">{{ languageService.T('functionalities') }}</h3>
+            <div class="space-y-4">
+              <div class="flex items-center p-3 bg-slate-100 dark:bg-slate-900/50 rounded-lg">
+                <input type="checkbox" id="userKnowledgeBaseEnabled" name="userKnowledgeBaseEnabled" [(ngModel)]="bot.userKnowledgeBaseEnabled" class="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-slate-200 dark:bg-slate-700 dark:border-slate-600">
+                <label for="userKnowledgeBaseEnabled" class="ml-3 text-slate-800 dark:text-white">{{ languageService.T('enableUserKnowledgeBase') }}</label>
+              </div>
+              @if(bot.userKnowledgeBaseEnabled) {
+                <div class="animate-fade-in-fast">
+                   <label for="userKnowledgeBaseN8nWebhook" class="block font-semibold mb-2">{{ languageService.T('userKnowledgeBaseWebhook') }}</label>
+                   <input type="url" id="userKnowledgeBaseN8nWebhook" name="userKnowledgeBaseN8nWebhook" [(ngModel)]="bot.userKnowledgeBaseN8nWebhook" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono">
+                </div>
+              }
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 shrink-0">
+          <button type="button" (click)="closeBotModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button>
+          <button type="submit" [disabled]="botForm.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed transition-colors">{{ languageService.T('saveBot') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Bot Delete Confirmation Modal -->
+@if (botToDelete(); as bot) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-lg border border-red-300 dark:border-red-700 animate-pop-in">
+      <div class="text-center">
+        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900">
+          <svg class="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold mt-4 text-slate-900 dark:text-white">{{ languageService.T('deleteBotTitle') }}</h2>
+        <p class="text-slate-500 dark:text-slate-400 mt-2" [innerHTML]="languageService.T('deleteBotMessage').replace('{botName}', bot.nombre).replace('{botId}', bot.bot_id)"></p>
+        <p class="text-slate-500 dark:text-slate-400 mt-4">{{ languageService.T('deleteBotConfirmation') }}</p>
+        <input 
+          type="text" 
+          class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 mt-2 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-red-500 focus:outline-none font-mono text-center"
+          [placeholder]="bot.bot_id"
+          (input)="deleteConfirmationInput.set($any($event.target).value)">
+      </div>
+      <div class="flex justify-center gap-4 mt-6">
+        <button type="button" (click)="cancelDeleteBot()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-6 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button>
+        <button 
+          type="button" 
+          (click)="confirmDeleteBot()" 
+          [disabled]="!isDeleteConfirmed()"
+          class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed transition-colors">
+            {{ languageService.T('confirmDeleteButton') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- MODALS FOR PROMPTS, LINKS, KNOWLEDGE, DELETE -->
+@if (isPromptModalOpen() && editingPrompt()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div 
+      class="bg-white dark:bg-slate-800 shadow-2xl border border-slate-200 dark:border-slate-700 transition-all duration-300 ease-in-out flex flex-col animate-pop-in"
+      [class.rounded-lg]="!isPromptModalMaximized()"
+      [class.max-w-3xl]="!isPromptModalMaximized()"
+      [class.w-full]="isPromptModalMaximized()"
+      [class.h-full]="isPromptModalMaximized()"
+    >
+      <!-- Header -->
+      <div class="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700 shrink-0">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ languageService.T(editingPrompt()!.id ? 'editPrompt' : 'createPrompt') }}</h2>
+        <button (click)="togglePromptModalMaximize()" title="Maximize/Minimize" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 transition-colors">
+            @if(isPromptModalMaximized()) {
+                <!-- Minimize Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6m0-6-9 9M9 21H3v-6m0 6 9-9" /></svg>
+            } @else {
+                <!-- Maximize Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4h4m12 4V4h-4m-4 12v4h4m-12-4v4H4" /></svg>
+            }
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form #promptForm="ngForm" (ngSubmit)="savePrompt()" class="p-6 flex flex-col flex-grow overflow-y-auto">
+        <!-- Prompt ID -->
+        <div class="mb-4 shrink-0">
+          <label for="promptId" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('promptIdLabel') }}</label>
+          <input type="text" id="promptId" name="promptId" #promptId="ngModel" [(ngModel)]="editingPrompt()!.promptId" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono" [placeholder]="languageService.T('promptIdPlaceholder')" required>
+        </div>
+        
+        <!-- Prompt Content -->
+        <div class="mb-6 flex flex-col flex-grow">
+          <label for="promptContent" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('promptContentLabel') }}</label>
+          <div class="bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg flex flex-col flex-grow">
+            <!-- Insert Variable buttons -->
+            <div class="p-2 border-b border-slate-300 dark:border-slate-700 flex items-center gap-2 shrink-0 flex-wrap">
+              <span class="text-sm text-slate-500 dark:text-slate-400 mr-2">{{ languageService.T('insertVariable') }}</span>
+              <button type="button" (click)="insertVariable('user_name', promptContentRef)" class="px-2 py-1 text-xs bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 rounded">user_name</button>
+              <button type="button" (click)="insertVariable('order_id', promptContentRef)" class="px-2 py-1 text-xs bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 rounded">order_id</button>
+              <button type="button" (click)="insertVariable('product_name', promptContentRef)" class="px-2 py-1 text-xs bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 rounded">product_name</button>
+            </div>
+            <!-- Textarea -->
+            <textarea 
+              id="promptContent" 
+              name="promptContent" 
+              #promptContentRef #promptContent="ngModel" 
+              [(ngModel)]="editingPrompt()!.content"
+              class="w-full bg-transparent text-slate-800 dark:text-white rounded-b-md p-3 focus:outline-none flex-grow"
+              [class.resize-y]="!isPromptModalMaximized()"
+              [class.h-64]="!isPromptModalMaximized()"
+              [placeholder]="languageService.T('promptContentPlaceholder')" 
+              required>
+            </textarea>
+          </div>
+        </div>
+        
+        <!-- Footer buttons -->
+        <div class="flex justify-end gap-4 shrink-0">
+          <button type="button" (click)="closePromptModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button>
+          <button type="submit" [disabled]="promptForm.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed transition-colors">{{ languageService.T('savePrompt') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+@if (isLinkModalOpen() && editingLink()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-xl border border-slate-200 dark:border-slate-700 animate-pop-in"><h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(editingLink()!.id ? 'editLink' : 'createLink') }}</h2><form #linkForm="ngForm" (ngSubmit)="saveLink()"><div class="mb-4"><label for="linkLabel" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('linkLabel') }}</label><input type="text" id="linkLabel" name="linkLabel" #label="ngModel" [(ngModel)]="editingLink()!.label" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" [placeholder]="languageService.T('labelPlaceholder')" required></div><div class="mb-6"><label for="linkUrl" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('urlLabel') }}</label><input type="url" id="linkUrl" name="linkUrl" #url="ngModel" [(ngModel)]="editingLink()!.url" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" [placeholder]="languageService.T('urlPlaceholder')" required></div><div class="flex justify-end gap-4"><button type="button" (click)="closeLinkModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button><button type="submit" [disabled]="linkForm.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed transition-colors">{{ languageService.T('saveLink') }}</button></div></form></div></div>
+}
+@if (isKnowledgeModalOpen() && editingKnowledgeItem()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-xl border border-slate-200 dark:border-slate-700 animate-pop-in"><h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(editingKnowledgeItem()!.id ? 'editKnowledgeItem' : 'createKnowledgeItem') }}</h2><form #kbForm="ngForm" (ngSubmit)="saveKnowledgeItem()"><div class="mb-4"><label for="kbTitle" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('kbTitle') }}</label><input type="text" id="kbTitle" name="kbTitle" #title="ngModel" [(ngModel)]="editingKnowledgeItem()!.title" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" [placeholder]="languageService.T('kbTitlePlaceholder')" required></div><div class="mb-4"><label for="kbDesc" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('kbDescription') }}</label><textarea id="kbDesc" name="kbDesc" #desc="ngModel" [(ngModel)]="editingKnowledgeItem()!.description" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none h-24 resize-y" [placeholder]="languageService.T('kbDescriptionPlaceholder')"></textarea></div><div class="mb-6"><label for="kbUrl" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('kbEndpointURL') }}</label><input type="url" id="kbUrl" name="kbUrl" #n8nUrl="ngModel" [(ngModel)]="editingKnowledgeItem()!.n8nUrl" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono" [placeholder]="languageService.T('kbEndpointURLPlaceholder')" required></div><div class="flex justify-end gap-4"><button type="button" (click)="closeKnowledgeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button><button type="submit" [disabled]="kbForm.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed transition-colors">{{ languageService.T('saveKnowledgeItem') }}</button></div></form></div></div>
+}
+@if (itemToDelete(); as item) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700 text-center animate-pop-in">
+      <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 sm:mx-0 sm:h-10 sm:w-10">
+        <svg class="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold mt-4 text-slate-900 dark:text-white">{{ languageService.T('deleteConfirmationTitle') }}</h2>
+      <p class="text-slate-500 dark:text-slate-400 mt-2">
+        {{ languageService.T('deleteConfirmationMessage').replace('{itemType}', languageService.T('itemType_' + item.type)).replace('{itemName}', item.displayName) }}
+      </p>
+      <p class="text-sm text-red-500 dark:text-red-400 font-semibold mt-2">{{ languageService.T('deleteConfirmationWarning') }}</p>
+      <div class="flex justify-center gap-4 mt-6">
+        <button type="button" (click)="cancelDelete()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-6 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button>
+        <button type="button" (click)="confirmDelete()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">{{ languageService.T('confirmDeleteButton') }}</button>
+      </div>
+    </div>
+  </div>
+}

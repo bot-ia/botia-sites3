@@ -1,0 +1,79 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Bot-IA</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,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">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // To prevent flicker, this script is run immediately to set the theme.
+    if (localStorage.getItem('app-theme') === 'dark' || (!('app-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for modern look */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    /* Light theme scrollbar */
+    ::-webkit-scrollbar-track {
+      background: #e2e8f0; /* slate-200 */
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8; /* slate-400 */
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b; /* slate-500 */
+    }
+
+    /* Dark theme scrollbar */
+    html.dark ::-webkit-scrollbar-track {
+      background: #1e293b; /* slate-800 */
+    }
+    html.dark ::-webkit-scrollbar-thumb {
+      background: #475569; /* slate-600 */
+    }
+    html.dark ::-webkit-scrollbar-thumb:hover {
+      background: #64748b; /* slate-500 */
+    }
+
+    /* Modal pop-in animation */
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1.0); }
+    }
+    .animate-pop-in {
+      animation: pop-in 0.2s ease-out forwards;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "rxjs": "https://aistudiocdn.com/rxjs@^7.8.2?conditions=es2015",
+    "rxjs/operators": "https://aistudiocdn.com/rxjs@^7.8.2/operators?conditions=es2015",
+    "rxjs/ajax": "https://aistudiocdn.com/rxjs@^7.8.2/ajax?conditions=es2015",
+    "rxjs/webSocket": "https://aistudiocdn.com/rxjs@^7.8.2/webSocket?conditions=es2015",
+    "rxjs/testing": "https://aistudiocdn.com/rxjs@^7.8.2/testing?conditions=es2015",
+    "rxjs/fetch": "https://aistudiocdn.com/rxjs@^7.8.2/fetch?conditions=es2015",
+    "@angular/core": "https://next.esm.sh/@angular/core@^20.3.1?external=rxjs",
+    "@angular/forms": "https://next.esm.sh/@angular/forms@^20.3.1?external=rxjs",
+    "@angular/compiler": "https://next.esm.sh/@angular/compiler@^20.3.1?external=rxjs",
+    "@angular/platform-browser": "https://next.esm.sh/@angular/platform-browser@^20.3.1?external=rxjs",
+    "@angular/common": "https://next.esm.sh/@angular/common@^20.3.1?external=rxjs",
+    "@angular/common/http": "https://next.esm.sh/@angular/common@^20.3.1/http?external=rxjs"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans antialiased">
+  <app-root></app-root>
+</body>
+</html>

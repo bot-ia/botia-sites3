@@ -1,0 +1,517 @@
+<div class="animate-fade-in space-y-6">
+  <h1 class="text-3xl font-bold text-slate-900 dark:text-white">{{ languageService.T('notifications') }}</h1>
+
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700">
+    <!-- Tabs -->
+    <div class="flex border-b border-slate-200 dark:border-slate-700">
+      <button (click)="changeSubView('templates')" [class.bg-slate-100]="activeSubView() === 'templates'" [class.dark:bg-slate-900]="activeSubView() === 'templates'" [class.text-indigo-600]="activeSubView() === 'templates'" [class.dark:text-indigo-400]="activeSubView() === 'templates'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('waTemplates') }}</button>
+      <button (click)="changeSubView('configs')" [class.bg-slate-100]="activeSubView() === 'configs'" [class.dark:bg-slate-900]="activeSubView() === 'configs'" [class.text-indigo-600]="activeSubView() === 'configs'" [class.dark:text-indigo-400]="activeSubView() === 'configs'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('autoNotifications') }}</button>
+      <button (click)="changeSubView('campaigns')" [class.bg-slate-100]="activeSubView() === 'campaigns'" [class.dark:bg-slate-900]="activeSubView() === 'campaigns'" [class.text-indigo-600]="activeSubView() === 'campaigns'" [class.dark:text-indigo-400]="activeSubView() === 'campaigns'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('campaigns') }}</button>
+      <button (click)="changeSubView('queue')" [class.bg-slate-100]="activeSubView() === 'queue'" [class.dark:bg-slate-900]="activeSubView() === 'queue'" [class.text-indigo-600]="activeSubView() === 'queue'" [class.dark:text-indigo-400]="activeSubView() === 'queue'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('sendQueue') }}</button>
+    </div>
+
+    @if(isLoading() || isCampaignLoading()) {
+      <div class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('loading') }}</div>
+    } @else {
+      <div class="p-6">
+        @switch (activeSubView()) {
+          @case ('templates') {
+            <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+              <div class="bg-blue-50 dark:bg-slate-800/50 border border-blue-200 dark:border-blue-900/50 rounded-lg p-4 flex items-start gap-4 flex-grow">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h3 class="font-semibold text-blue-800 dark:text-blue-300">{{ languageService.T('howToCreateTemplates') }}</h3>
+                  <p class="text-sm text-slate-600 dark:text-slate-300 mt-1" [innerHTML]="languageService.T('templatesManagedInMeta')"></p>
+                  <p class="text-sm text-slate-600 dark:text-slate-300 mt-2">{{ languageService.T('templatesSyncInfo') }}</p>
+                  <a href="https://business.facebook.com/wa/manage/message-templates/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-sm">
+                    {{ languageService.T('goToMeta') }}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+               <button (click)="syncTemplates()" [disabled]="isSyncing()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center disabled:bg-slate-500 shrink-0">
+                @if(isSyncing()) {
+                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  {{ languageService.T('syncing') }}
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.162l-1.5-1.5a1 1 0 111.414-1.414l4.243 4.242a1 1 0 010 1.414l-4.243 4.243a1 1 0 01-1.414-1.414l1.5-1.5a4.997 4.997 0 00-8.898-2.05L4 10V5a1 1 0 01-1-1H2a1 1 0 01-1-1V3a1 1 0 011-1h2z" clip-rule="evenodd" /></svg>
+                  {{ languageService.T('syncWithMeta') }}
+                }
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="p-3 font-semibold">{{ languageService.T('templateName') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('category') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('language') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('status') }}</th>
+                    <th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for(template of templates(); track template.id) {
+                    <tr class="border-t border-slate-200 dark:border-slate-700">
+                      <td class="p-3 font-medium text-slate-800 dark:text-white">{{ template.name }}</td>
+                      <td class="p-3 capitalize text-slate-600 dark:text-slate-300">{{ template.category }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ template.language }}</td>
+                      <td class="p-3"><span class="px-2 py-1 text-xs rounded-full" [class.bg-green-100]="template.status === 'APPROVED'" [class.text-green-800]="template.status === 'APPROVED'" [class.dark:bg-green-900/50]="template.status === 'APPROVED'" [class.dark:text-green-300]="template.status === 'APPROVED'" [class.bg-yellow-100]="template.status !== 'APPROVED'" [class.text-yellow-800]="template.status !== 'APPROVED'" [class.dark:bg-yellow-900/50]="template.status !== 'APPROVED'" [class.dark:text-yellow-300]="template.status !== 'APPROVED'">{{ template.status }}</span></td>
+                      <td class="p-3 text-right">
+                        <button (click)="openTemplateParamsModal(template)" class="text-blue-500 hover:text-blue-400 text-sm">{{ languageService.T('editParameters') }}</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noTemplatesFound') }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          @case ('configs') {
+            <div class="space-y-6">
+                <div>
+                    <h2 class="text-2xl font-semibold text-slate-900 dark:text-white">{{ languageService.T('automationHeader') }}</h2>
+                    <p class="text-slate-500 dark:text-slate-400 mt-1">{{ languageService.T('automationDescription') }}</p>
+                </div>
+
+                <div class="flex justify-end">
+                  <button (click)="openConfigModal(null)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center shadow-md hover:shadow-lg">
+                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    {{ languageService.T('newAutomation') }}
+                  </button>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                      <tr>
+                        <th class="p-3 font-semibold">{{ languageService.T('notificationType') }}</th>
+                        <th class="p-3 font-semibold">{{ languageService.T('template') }}</th>
+                        <th class="p-3 font-semibold">{{ languageService.T('interval') }}</th>
+                        <th class="p-3 font-semibold">{{ languageService.T('filters') }}</th>
+                        <th class="p-3 font-semibold">{{ languageService.T('status') }}</th>
+                        <th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for(config of configs(); track config.id) {
+                        <tr class="border-t border-slate-200 dark:border-slate-700">
+                          <td class="p-3 font-medium text-slate-800 dark:text-white">{{ languageService.T('notificationType_' + config.notification_type) }}</td>
+                          <td class="p-3 text-slate-600 dark:text-slate-300">{{ getTemplateName(config.template_id) }}</td>
+                          <td class="p-3 text-slate-600 dark:text-slate-300">{{ formatOffset(config.offset_minutes) }}</td>
+                          <td class="p-3 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate" [title]="formatFilters(config)">{{ formatFilters(config) || 'N/A' }}</td>
+                          <td class="p-3">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" [checked]="config.is_active" (change)="toggleConfigStatus(config)" class="sr-only peer">
+                              <div class="w-11 h-6 bg-slate-200 dark:bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                          </td>
+                          <td class="p-3 text-right">
+                            <button (click)="openConfigModal(config)" class="text-blue-500 hover:text-blue-400 text-sm mr-4">{{ languageService.T('edit') }}</button>
+                            <button (click)="requestDeleteConfig(config)" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="6" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noAutomationsFound') }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+          }
+          @case ('campaigns') {
+            @if (selectedCampaign(); as campaign) {
+              <!-- Campaign Detail View -->
+              <div class="animate-fade-in-fast">
+                <div class="flex items-center justify-between mb-6">
+                   <button (click)="backToCampaignsList()" class="flex items-center gap-2 text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                      {{ languageService.T('backToCampaigns') }}
+                    </button>
+                  @if (executeButtonState(); as btn) {
+                    <button (click)="requestExecuteCampaign()" [disabled]="isExecuting() || btn.disabled" [title]="isExecuting() ? languageService.T('processing') : btn.tooltip"
+                      class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed">
+                      @if(isExecuting()) {
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        {{ languageService.T('processing') }}
+                      } @else {
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        {{ languageService.T('runCampaignNow') }}
+                      }
+                    </button>
+                  }
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <!-- Left: Contacts -->
+                  <div class="lg:col-span-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-4 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                      <h3 class="text-xl font-semibold text-slate-800 dark:text-white">{{ languageService.T('assignedContacts') }} ({{ campaign.contacts.length }})</h3>
+                      <button (click)="openAddContactsModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                        {{ languageService.T('addContacts') }}
+                      </button>
+                    </div>
+                    @if(campaign.contacts.length > 0) {
+                      <div class="overflow-y-auto">
+                        <table class="w-full text-left">
+                          <thead class="text-sm text-slate-500 dark:text-slate-400"><tr>
+                              <th class="p-2 font-semibold">{{ languageService.T('phoneNumber') }}</th>
+                              <th class="p-2 font-semibold">{{ languageService.T('status') }}</th>
+                          </tr></thead>
+                          <tbody>
+                            @for(contact of campaign.contacts; track contact.id) {
+                              <tr class="border-t border-slate-200 dark:border-slate-700"><td class="p-2 font-mono text-sm text-slate-600 dark:text-slate-300">{{ contact.contact_phone }}</td><td class="p-2"><span class="text-xs px-2 py-1 rounded-full bg-slate-200 dark:bg-slate-700">{{ contact.status }}</span></td></tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    } @else {
+                      <div class="flex-grow flex items-center justify-center text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noContactsInCampaign') }}</div>
+                    }
+                  </div>
+                  <!-- Right: Info & Parameters -->
+                  <div class="space-y-6">
+                    <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                        <h3 class="text-xl font-semibold mb-4 text-slate-800 dark:text-white">{{ languageService.T('generalInfo') }}</h3>
+                        <div class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                          <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('campaignName') }}:</strong> {{ campaign.name }}</p>
+                          <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('template') }}:</strong> {{ getTemplateName(campaign.template_id) }}</p>
+                          <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('status') }}:</strong> <span class="px-2 py-1 rounded-full text-xs" [class]="getCampaignStatusColor(campaign.status)">{{ languageService.T('status_' + campaign.status) }}</span></p>
+                           <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('createdAt') }}:</strong> {{ formatDate(campaign.created_at) }}</p>
+                        </div>
+                         <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                            <button (click)="requestDeleteCampaign(campaign)" class="text-red-500 hover:text-red-400 font-semibold text-sm">{{ languageService.T('delete') }}</button>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                        <h3 class="text-xl font-semibold mb-4 text-slate-800 dark:text-white">{{ languageService.T('templateParams') }}</h3>
+                        @if(campaign.template?.parameters && campaign.template.parameters.length > 0) {
+                          <div class="space-y-4">
+                            @for(param of campaign.template.parameters; track param.param_index) {
+                              <div>
+                                <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                  Parameter <span class="font-mono text-indigo-500 dark:text-indigo-300">{{ '{' + '{' + (param.param_name || param.param_index) + '}' + '}' }}</span>
+                                </label>
+                                @if(param.param_example) {
+                                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Example: <span class="italic">"{{param.param_example}}"</span></p>
+                                }
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                  <select [(ngModel)]="param.assign_type" name="assign_type_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600">
+                                    <option [ngValue]="undefined" disabled>{{ languageService.T('assignedType') }}</option>
+                                    <option value="fixed_value">{{ languageService.T('assignType_fixed') }}</option>
+                                    <option value="contact_field">{{ languageService.T('assignType_contact_field') }}</option>
+                                  </select>
+                                  @if(param.assign_type === 'fixed_value') {
+                                    <input type="text" [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600" [placeholder]="languageService.T('enterValue')">
+                                  } @else if (param.assign_type === 'contact_field') {
+                                    <select [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600">
+                                      <option [ngValue]="undefined" disabled>{{ languageService.T('selectField') }}</option>
+                                      @for(field of contactFields; track field) {
+                                        <option [value]="field">{{ languageService.T('assignValue_' + field) }}</option>
+                                      }
+                                    </select>
+                                  } @else {
+                                    <div class="p-2 text-sm text-slate-500 dark:text-slate-400 italic">{{ languageService.T('paramNotAssigned') }}</div>
+                                  }
+                                </div>
+                              </div>
+                            }
+                          </div>
+                          <button (click)="saveParameterMappings()" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm">{{ languageService.T('saveParameters') }}</button>
+                        } @else {
+                          <p class="text-sm text-slate-500 dark:text-slate-400 italic">{{ languageService.T('templateHasNoParams') }}</p>
+                        }
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            } @else {
+              <!-- Campaign List View -->
+              <div class="flex justify-end mb-4">
+                <button (click)="openNewCampaignModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow-md hover:shadow-lg"><svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>{{ languageService.T('newCampaign') }}</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                    <tr>
+                      <th class="p-3 font-semibold">{{ languageService.T('campaignName') }}</th>
+                      <th class="p-3 font-semibold">{{ languageService.T('template') }}</th>
+                      <th class="p-3 font-semibold">{{ languageService.T('totalContacts') }}</th>
+                      <th class="p-3 font-semibold">{{ languageService.T('status') }}</th>
+                      <th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for(campaign of campaigns(); track campaign.id) {
+                      <tr class="border-t border-slate-200 dark:border-slate-700">
+                        <td class="p-3 font-medium text-slate-800 dark:text-white">{{ campaign.name }}</td>
+                        <td class="p-3 text-slate-600 dark:text-slate-300">{{ getTemplateName(campaign.template_id) }}</td>
+                        <td class="p-3 text-slate-600 dark:text-slate-300">{{ campaign.total_contacts }}</td>
+                        <td class="p-3"><span class="px-2 py-1 text-xs rounded-full capitalize" [class]="getCampaignStatusColor(campaign.status)">{{ languageService.T('status_' + campaign.status) }}</span></td>
+                        <td class="p-3 text-right">
+                          <button (click)="selectCampaign(campaign)" class="text-blue-500 hover:text-blue-400 text-sm font-semibold">{{ languageService.T('edit') }} / {{ languageService.T('details') }}</button>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="5" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noCampaignsFound') }}</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+          @case ('queue') {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="p-3 font-semibold">{{ languageService.T('phone') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('templateName') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('notificationType') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('sendDate') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('status') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for(item of queueItems(); track item.id) {
+                    <tr class="border-t border-slate-200 dark:border-slate-700">
+                      <td class="p-3 font-mono text-slate-600 dark:text-slate-300">{{ item.contact_phone }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ item.template_name }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ languageService.T('notificationType_' + item.notification_type) }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ formatDate(item.send_at) }}</td>
+                      <td class="p-3">
+                        <span class="px-2 py-1 text-xs rounded-full" [class]="getQueueStatusColor(item.status)">
+                          {{ languageService.T('status_' + item.status) || item.status }}
+                        </span>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noItemsInQueue') }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- MODALS -->
+@if (isModalOpen()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    @switch (modalContent()) {
+      @case ('templateParams') {
+        @if(editingTemplate(); as template) {
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl border border-slate-200 dark:border-slate-700">
+          <h2 class="text-2xl font-bold mb-4 text-slate-900 dark:text-white">{{ languageService.T('templateParameters') }}: <span class="text-indigo-500 dark:text-indigo-400">{{ template.name }}</span></h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">{{ languageService.T('templateParamsReadOnlyInfo') }}</p>
+          
+          @if(template.parameters && template.parameters.length > 0) {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="p-3 font-semibold">{{ languageService.T('paramKey') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('paramExample') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for(param of template.parameters; track param.param_index) {
+                    <tr class="border-t border-slate-200 dark:border-slate-700">
+                      <td class="p-3 font-mono text-indigo-500 dark:text-indigo-400">{{ param.param_name || ('{{' + param.param_index + '}}') }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300 italic">{{ param.param_example || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+              <p class="text-center text-slate-500 dark:text-slate-400 py-4">{{ languageService.T('templateHasNoParams') }}</p>
+          }
+
+          <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('close') }}</button>
+          </div>
+        </div>
+        }
+      }
+      @case ('notificationConfig') {
+        @if(editingConfig(); as config) {
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-3xl border border-slate-200 dark:border-slate-700">
+          <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(config.id ? 'editAutomation' : 'createAutomation') }}</h2>
+          <form #form="ngForm" (ngSubmit)="saveConfig()">
+             <div class="space-y-6">
+              <div>
+                <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('notificationType') }}</label>
+                <select [(ngModel)]="config.notification_type" name="notification_type" class="w-full bg-slate-100 dark:bg-slate-700 p-3 rounded-md border border-slate-300 dark:border-slate-600" required>
+                  @for(t of notificationTypes; track t){<option [value]="t">{{ languageService.T('notificationType_' + t) }}</option>}
+                </select>
+              </div>
+              <div>
+                <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('template') }}</label>
+                <select [(ngModel)]="config.template_id" name="template_id" class="w-full bg-slate-100 dark:bg-slate-700 p-3 rounded-md border border-slate-300 dark:border-slate-600" required [disabled]="approvedTemplates().length === 0">
+                  @if (approvedTemplates().length === 0) {
+                    <option [value]="0" disabled>{{ languageService.T('noTemplatesFound') }} (APPROVED)</option>
+                  } @else {
+                    @for(t of approvedTemplates(); track t.id) {
+                      <option [value]="t.id">{{t.name}}</option>
+                    }
+                  }
+                </select>
+              </div>
+              <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4">
+                <legend class="px-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('whenToSend') }}</legend>
+                <div class="flex items-center gap-4 text-slate-800 dark:text-white">
+                  <span class="font-medium">{{ languageService.T('send') }}</span>
+                  <input type="number" [(ngModel)]="offsetValue" name="offset_value" class="w-24 bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required min="1">
+                  <select [(ngModel)]="offsetUnit" name="offset_unit" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    <option value="minutes">{{ languageService.T('minutes') }}</option>
+                    <option value="hours">{{ languageService.T('hours') }}</option>
+                    <option value="days">{{ languageService.T('days') }}</option>
+                  </select>
+                  <select [(ngModel)]="offsetTimeframe" name="offset_timeframe" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    <option value="before">{{ languageService.T('beforeEvent') }}</option>
+                    <option value="after">{{ languageService.T('afterEvent') }}</option>
+                  </select>
+                </div>
+              </fieldset>
+              <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4">
+                <legend class="px-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('optionalFilters') }}</legend>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block mb-2 font-semibold text-slate-500 dark:text-slate-400 text-sm">{{ languageService.T('applyIfPaymentStatus') }}</label>
+                    <select [(ngModel)]="config.apply_if_payment_status" name="payment_status" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                      <option [ngValue]="undefined">{{ languageService.T('anyStatus') }}</option>
+                      @for(s of paymentStatuses; track s){<option [value]="s">{{ languageService.T('paymentStatus_' + s) }}</option>}
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block mb-2 font-semibold text-slate-500 dark:text-slate-400 text-sm">{{ languageService.T('applyIfConfirmationStatus') }}</label>
+                    <select [(ngModel)]="config.apply_if_confirmation_status" name="confirmation_status" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                      <option [ngValue]="undefined">{{ languageService.T('anyStatus') }}</option>
+                      @for(s of confirmationStatuses; track s){<option [value]="s">{{ languageService.T('confirmationStatus_' + s) }}</option>}
+                    </select>
+                  </div>
+              </div>
+              </fieldset>
+              <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                <input type="checkbox" id="is_active" name="is_active" [(ngModel)]="config.is_active" class="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-slate-600 dark:border-slate-500">
+                <label for="is_active" class="ml-3 text-slate-800 dark:text-white">{{ languageService.T('activateImmediately') }}</label>
+              </div>
+            </div>
+            <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+              <button type="submit" [disabled]="form.invalid || !config.template_id" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed">{{ languageService.T('saveAutomation') }}</button>
+            </div>
+          </form>
+        </div>
+        }
+      }
+      @case ('newCampaign') {
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-lg border border-slate-200 dark:border-slate-700">
+          <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T('newCampaign') }}</h2>
+          <form #form="ngForm" (ngSubmit)="createCampaign()">
+            <div class="space-y-4">
+                <div><label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('campaignName') }}</label><input type="text" [(ngModel)]="newCampaign().name" name="name" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required></div>
+                <div><label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('template') }}</label><select [(ngModel)]="newCampaign().template_id" name="template_id" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>@for(t of approvedTemplates(); track t.id){<option [value]="t.id">{{t.name}}</option>}</select></div>
+            </div>
+             <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+              <button type="submit" [disabled]="form.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500">{{ languageService.T('createCampaign') }}</button>
+            </div>
+          </form>
+        </div>
+      }
+      @case('addContacts') {
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-6 w-full max-w-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+          <h2 class="text-2xl font-bold mb-4 text-slate-900 dark:text-white">{{ languageService.T('addContacts') }}</h2>
+          <input type="text" [placeholder]="languageService.T('searchContacts')" [(ngModel)]="contactSearchTerm" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600 mb-4">
+          <div class="flex-grow overflow-y-auto border-t border-b border-slate-200 dark:border-slate-700">
+            @for(contact of filteredBotContacts(); track contact.contact_id) {
+              <label class="flex items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-200 dark:border-slate-700">
+                <input type="checkbox" [checked]="selectedContactIds().has(contact.contact_id)" (change)="toggleContactSelection(contact.contact_id)" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-slate-600 dark:border-slate-500">
+                <div class="ml-3 text-sm">
+                  <div class="font-medium text-slate-800 dark:text-white">{{ contact.name }}</div>
+                  <div class="text-slate-500 dark:text-slate-400">{{ contact.phone_number }}</div>
+                </div>
+              </label>
+            } @empty {
+              <div class="p-4 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noContactsFound') }}</div>
+            }
+          </div>
+          <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <span class="text-sm text-slate-500 dark:text-slate-400">{{ selectedContactIds().size }} {{ languageService.T('selected') }}</span>
+            <div class="flex gap-4">
+              <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+              <button type="button" (click)="addSelectedContacts()" [disabled]="selectedContactIds().size === 0" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500">{{ languageService.T('addSelectedContacts') }}</button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+}
+
+<!-- Delete Confirmation Modals -->
+@if (configToDelete(); as item) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700 text-center">
+      <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
+        <svg class="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+      </div>
+      <h2 class="text-2xl font-bold mt-4 text-slate-900 dark:text-white">{{ languageService.T('deleteConfirmationTitle') }}</h2>
+      <p class="text-slate-500 dark:text-slate-400 mt-2">
+        {{ languageService.T('deleteConfirmationMessage').replace('{itemType}', languageService.T('itemType_notification_config')).replace('{itemName}', languageService.T('notificationType_' + item.notification_type)) }}
+      </p>
+      <p class="text-sm text-red-500 dark:text-red-400 font-semibold mt-2">{{ languageService.T('deleteConfirmationWarning') }}</p>
+      <div class="flex justify-center gap-4 mt-6">
+        <button type="button" (click)="cancelDeleteConfig()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('cancel') }}</button>
+        <button type="button" (click)="confirmDeleteConfig()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('confirmDeleteButton') }}</button>
+      </div>
+    </div>
+  </div>
+}
+@if (campaignToDelete(); as item) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700 text-center">
+      <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
+        <svg class="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+      </div>
+      <h2 class="text-2xl font-bold mt-4 text-slate-900 dark:text-white">{{ languageService.T('deleteConfirmationTitle') }}</h2>
+      <p class="text-slate-500 dark:text-slate-400 mt-2">
+        {{ languageService.T('deleteConfirmationMessage').replace('{itemType}', languageService.T('itemType_campaign')).replace('{itemName}', item.name) }}
+      </p>
+      <p class="text-sm text-red-500 dark:text-red-400 font-semibold mt-2">{{ languageService.T('deleteConfirmationWarning') }}</p>
+      <div class="flex justify-center gap-4 mt-6">
+        <button type="button" (click)="cancelDeleteCampaign()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('cancel') }}</button>
+        <button type="button" (click)="confirmDeleteCampaign()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('confirmDeleteButton') }}</button>
+      </div>
+    </div>
+  </div>
+}
+<!-- Execute Campaign Confirmation Modal -->
+@if (campaignToExecute(); as item) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700 text-center">
+      <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 dark:text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold mt-4 text-slate-900 dark:text-white">{{ languageService.T('executeCampaignTitle') }}</h2>
+      <p class="text-slate-500 dark:text-slate-400 mt-2">{{ languageService.T('runCampaignConfirmation') }}</p>
+      <div class="flex justify-center gap-4 mt-6">
+        <button type="button" (click)="cancelExecuteCampaign()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('cancel') }}</button>
+        <button type="button" (click)="confirmExecuteCampaign()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('confirmExecuteButton') }}</button>
+      </div>
+    </div>
+  </div>
+}

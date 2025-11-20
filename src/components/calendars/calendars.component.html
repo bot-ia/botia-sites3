@@ -1,0 +1,152 @@
+<div class="animate-fade-in">
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white">{{ languageService.T('manageCalendars') }}</h1>
+    <div class="flex items-center gap-4">
+      <input 
+        type="text" 
+        [placeholder]="languageService.T('searchCalendars')"
+        class="w-64 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        [value]="searchTerm()"
+        (input)="searchTerm.set($any($event.target).value)">
+      <button (click)="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center shadow-md hover:shadow-lg">
+        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        {{ languageService.T('newCalendar') }}
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('loading') }}</div>
+  } @else {
+    @if (filteredItems().length > 0) {
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+              <tr>
+                <th class="p-4 font-semibold">{{ languageService.T('calendarName') }}</th>
+                <th class="p-4 font-semibold">{{ languageService.T('calendarProfessional') }}</th>
+                <th class="p-4 font-semibold">{{ languageService.T('calendarAppointmentType') }}</th>
+                <th class="p-4 font-semibold">{{ languageService.T('calendarPrice') }}</th>
+                <th class="p-4 font-semibold">{{ languageService.T('status') }}</th>
+                <th class="p-4 font-semibold text-right">{{ languageService.T('actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of filteredItems(); track item.calendar_id) {
+                <tr class="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150">
+                  <td class="p-4 font-medium text-slate-800 dark:text-white">{{ item.name }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-300">{{ getProfessionalName(item.professional_id) }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-300">{{ languageService.T('appointmentType_' + item.appointment_type) }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-300">{{ item.price | currency:item.currency:'symbol':'1.0-0' }}</td>
+                  <td class="p-4">
+                     <span class="px-3 py-1 text-xs font-medium rounded-full"
+                        [class.bg-green-100]="item.is_active" [class.text-green-800]="item.is_active" [class.dark:bg-green-900/50]="item.is_active" [class.dark:text-green-300]="item.is_active"
+                        [class.bg-red-100]="!item.is_active" [class.text-red-800]="!item.is_active" [class.dark:bg-red-900/50]="!item.is_active" [class.dark:text-red-300]="!item.is_active">
+                      {{ item.is_active ? languageService.T('active') : languageService.T('inactive') }}
+                    </span>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button (click)="openModal(item)" class="text-blue-500 hover:text-blue-400 mr-4">{{ languageService.T('edit') }}</button>
+                    <button (click)="requestDeleteItem(item)" class="text-red-500 hover:text-red-400">{{ languageService.T('delete') }}</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @else {
+      <div class="text-center p-8 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+        {{ searchTerm() ? languageService.T('noCalendarsFound') : languageService.T('noCalendarsConfigured') }}
+      </div>
+    }
+  }
+</div>
+
+<!-- Calendar Editor Modal -->
+@if (isModalOpen() && editingItem(); as item) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl border border-slate-200 dark:border-slate-700">
+      <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(item.calendar_id ? 'editCalendar' : 'createCalendar') }}</h2>
+      
+      <form #itemForm="ngForm" (ngSubmit)="saveItem()">
+        <div class="space-y-4 text-slate-600 dark:text-slate-300">
+            <div>
+              <label class="block font-semibold mb-2">{{ languageService.T('calendarName') }}</label>
+              <input type="text" name="name" [(ngModel)]="item.name" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600" required>
+            </div>
+            <div>
+              <label class="block font-semibold mb-2">{{ languageService.T('calendarProfessional') }}</label>
+              <select name="professional_id" [(ngModel)]="item.professional_id" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+                <option [ngValue]="null">N/A</option>
+                @for(prof of professionals(); track prof.professional_id) {
+                  <option [value]="prof.professional_id">{{ prof.name }}</option>
+                }
+              </select>
+            </div>
+             <div>
+              <label class="block font-semibold mb-2">{{ languageService.T('calendarAppointmentType') }}</label>
+              <select name="appointment_type" [(ngModel)]="item.appointment_type" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600" required>
+                 @for(type of appointmentTypes; track type) {
+                  <option [value]="type">{{ languageService.T('appointmentType_' + type) }}</option>
+                }
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('calendarGoogleLink') }}</label>
+                <input type="url" name="google_calendar_link" [(ngModel)]="item.google_calendar_link" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+              </div>
+              <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('calendarGoogleId') }}</label>
+                <input type="text" name="google_calendar_id" [(ngModel)]="item.google_calendar_id" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('calendarPrice') }}</label>
+                <input type="number" name="price" [(ngModel)]="item.price" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+              </div>
+              <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('calendarCurrency') }}</label>
+                <input type="text" name="currency" [(ngModel)]="item.currency" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+              </div>
+            </div>
+            <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                <input type="checkbox" id="is_active" name="is_active" [(ngModel)]="item.is_active" class="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:border-slate-600">
+                <label for="is_active" class="ml-3 text-slate-800 dark:text-white">{{ languageService.T('calendarIsActive') }}</label>
+            </div>
+        </div>
+        
+        <!-- Footer actions -->
+        <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+          <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+          <button type="submit" [disabled]="itemForm.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed">{{ languageService.T('save') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (itemToDelete(); as item) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700 text-center">
+      <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
+        <svg class="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold mt-4 text-slate-900 dark:text-white">{{ languageService.T('deleteConfirmationTitle') }}</h2>
+      <p class="text-slate-500 dark:text-slate-400 mt-2">
+        {{ languageService.T('deleteConfirmationMessage').replace('{itemType}', languageService.T('itemType_calendar')).replace('{itemName}', item.name) }}
+      </p>
+      <p class="text-sm text-red-500 dark:text-red-400 font-semibold mt-2">{{ languageService.T('deleteConfirmationWarning') }}</p>
+      <div class="flex justify-center gap-4 mt-6">
+        <button type="button" (click)="cancelDelete()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('cancel') }}</button>
+        <button type="button" (click)="confirmDelete()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('confirmDeleteButton') }}</button>
+      </div>
+    </div>
+  </div>
+}

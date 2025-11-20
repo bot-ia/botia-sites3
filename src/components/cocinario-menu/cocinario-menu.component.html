@@ -1,0 +1,190 @@
+<div class="animate-fade-in">
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white">{{ languageService.T('managePortfolio') }}</h1>
+    <div class="flex items-center gap-4">
+      <input 
+        type="text" 
+        [placeholder]="languageService.T('searchPortfolioItems')"
+        class="w-64 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        [value]="searchTerm()"
+        (input)="searchTerm.set($any($event.target).value)">
+      <button (click)="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center shadow-md hover:shadow-lg">
+        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        {{ languageService.T('newItem') }}
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('loading') }}</div>
+  } @else {
+    @if (filteredItems().length > 0) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        @for (item of filteredItems(); track item.id) {
+          <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-lg border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden group transition-all duration-300 hover:-translate-y-1">
+            <div class="relative h-48 bg-slate-200 dark:bg-slate-700">
+              <img [src]="item.imagen" [alt]="item.nombre" class="w-full h-full object-cover">
+              @if (item.itemType === 'combo') {
+                <span class="absolute top-2 right-2 bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-full">{{ languageService.T('portfolioItemTypeCombo') }}</span>
+              }
+            </div>
+            <div class="p-4 flex-grow flex flex-col">
+              <h3 class="text-lg font-semibold text-slate-800 dark:text-white flex-grow">{{ item.nombre }}</h3>
+              <div class="flex justify-between items-center mt-2">
+                <p class="text-sm text-slate-500 dark:text-slate-400 font-mono">{{ item.sku }}</p>
+                <p class="text-indigo-500 dark:text-indigo-400 font-bold">{{ formatCurrency(item.precio_unitario) }}</p>
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-2">
+              <button (click)="openModal(item)" class="text-blue-500 hover:text-blue-400 text-sm font-semibold">{{ languageService.T('edit') }}</button>
+              <button (click)="deleteItem(item.id)" class="text-red-500 hover:text-red-400 text-sm font-semibold">{{ languageService.T('delete') }}</button>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="text-center p-8 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+        {{ searchTerm() ? languageService.T('noPortfolioItemsFound') : languageService.T('noPortfolioItemsConfigured') }}
+      </div>
+    }
+  }
+</div>
+
+<!-- Portfolio Item Editor Modal -->
+@if (isModalOpen() && editingItem(); as item) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-5xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+      <h2 class="text-2xl font-bold mb-6 shrink-0 text-slate-900 dark:text-white">{{ languageService.T(item.id ? 'editPortfolioItem' : 'createPortfolioItem') }}</h2>
+      
+      <form #itemForm="ngForm" (ngSubmit)="saveItem()" class="overflow-y-auto pr-4 -mr-4 flex-grow text-slate-600 dark:text-slate-300">
+        <!-- Item Type Selector -->
+         <fieldset class="mb-6">
+            <legend class="block font-semibold mb-2">{{ languageService.T('portfolioItemType') }}</legend>
+            <div class="flex gap-4">
+                <label class="flex items-center p-3 bg-slate-100 dark:bg-slate-700 rounded-lg border-2 cursor-pointer transition-colors" [class.border-indigo-500]="item.itemType === 'product'" [class.border-slate-300]="item.itemType !== 'product'" [class.dark:border-slate-600]="item.itemType !== 'product'">
+                    <input type="radio" name="itemType" value="product" [(ngModel)]="item.itemType" class="h-4 w-4 text-indigo-600 bg-white dark:bg-slate-900 border-slate-400 dark:border-slate-500 focus:ring-indigo-500">
+                    <span class="ml-3 text-slate-800 dark:text-white">{{ languageService.T('portfolioItemTypeProduct') }}</span>
+                </label>
+                <label class="flex items-center p-3 bg-slate-100 dark:bg-slate-700 rounded-lg border-2 cursor-pointer transition-colors" [class.border-indigo-500]="item.itemType === 'combo'" [class.border-slate-300]="item.itemType !== 'combo'" [class.dark:border-slate-600]="item.itemType !== 'combo'">
+                    <input type="radio" name="itemType" value="combo" [(ngModel)]="item.itemType" class="h-4 w-4 text-indigo-600 bg-white dark:bg-slate-900 border-slate-400 dark:border-slate-500 focus:ring-indigo-500">
+                    <span class="ml-3 text-slate-800 dark:text-white">{{ languageService.T('portfolioItemTypeCombo') }}</span>
+                </label>
+            </div>
+        </fieldset>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
+          <!-- Left Column -->
+          <div class="flex flex-col gap-4">
+            <div>
+              <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemName') }}</label>
+              <input type="text" name="nombre" [(ngModel)]="item.nombre" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600" required>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemSku') }}</label>
+                <input type="text" name="sku" [(ngModel)]="item.sku" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 font-mono" required>
+              </div>
+               <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemCategory') }}</label>
+                <input type="text" name="categoria_slug" [(ngModel)]="item.categoria_slug" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+              </div>
+            </div>
+             <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemPresentation') }}</label>
+                <input type="text" name="presentacion" [(ngModel)]="item.presentacion" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+              </div>
+               <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemTax') }}</label>
+                <input type="text" name="impuesto" [(ngModel)]="item.impuesto" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemPrice') }}</label>
+                <input type="number" name="precio_unitario" [(ngModel)]="item.precio_unitario" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600" required>
+              </div>
+               <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemMinOrder') }}</label>
+                <input type="number" name="min_por_ref" [(ngModel)]="item.min_por_ref" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+              </div>
+            </div>
+             <div>
+              <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemImageURL') }}</label>
+              <input type="url" name="imagen" [(ngModel)]="item.imagen" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600">
+            </div>
+            <div>
+              <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemNotes') }}</label>
+              <textarea name="notas" [(ngModel)]="item.notas" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 h-24 resize-y"></textarea>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="flex flex-col gap-4">
+            @if (item.itemType === 'product') {
+              <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4 h-full flex flex-col animate-fade-in-fast">
+                <legend class="px-2 font-semibold">{{ languageService.T('portfolioItemComponents') }}</legend>
+                <div class="flex-grow flex flex-col gap-4">
+                    <div class="flex-1 flex flex-col">
+                      <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemPrincipal') }}</label>
+                      <textarea name="principal" [ngModel]="editingPrincipal()" (ngModelChange)="editingPrincipal.set($event)" class="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 resize-y flex-grow"></textarea>
+                    </div>
+                    <div class="flex-1 flex flex-col">
+                      <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemAccompaniments') }}</label>
+                      <textarea name="acompanamientos" [ngModel]="editingAcompanamientos()" (ngModelChange)="editingAcompanamientos.set($event)" class="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 resize-y flex-grow"></textarea>
+                    </div>
+                    <div class="flex-1 flex flex-col">
+                      <label class="block font-semibold mb-2">{{ languageService.T('portfolioItemDrinks') }}</label>
+                      <textarea name="bebidas" [ngModel]="editingBebidas()" (ngModelChange)="editingBebidas.set($event)" class="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 resize-y flex-grow"></textarea>
+                    </div>
+                </div>
+              </fieldset>
+            }
+            @if (item.itemType === 'combo') {
+               <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4 h-full flex flex-col animate-fade-in-fast">
+                <legend class="px-2 font-semibold">{{ languageService.T('comboBuilder') }}</legend>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">{{ languageService.T('comboBuilderDescription') }}</p>
+
+                @if (availableProducts().length > 0) {
+                  <div class="space-y-4">
+                    @for (category of item.combo_components; track category.id) {
+                      <div class="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div class="flex justify-between items-center mb-2">
+                            <input type="text" [(ngModel)]="category.category_name" name="category_name_{{category.id}}" class="bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 flex-grow" [placeholder]="languageService.T('categoryName')">
+                            <button type="button" (click)="removeComboCategory(category.id)" class="ml-4 text-red-500 hover:text-red-400 p-1 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        </div>
+                        <div class="max-h-40 overflow-y-auto p-2 bg-white dark:bg-slate-900 rounded-md">
+                          <p class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-2">{{ languageService.T('selectProducts') }}:</p>
+                          @for (product of availableProducts(); track product.id) {
+                            <label class="flex items-center p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer">
+                              <input type="checkbox" [checked]="isProductInComboCategory(category.id, product.id)" (change)="toggleProductInComboCategory(category.id, product.id)" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:border-slate-600">
+                              <span class="ml-3 text-sm text-slate-700 dark:text-slate-200">{{ product.nombre }}</span>
+                            </label>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  <button type="button" (click)="addComboCategory()" class="mt-4 w-full text-center bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-semibold py-2 px-4 rounded-lg text-sm flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                    {{ languageService.T('addCategory') }}
+                  </button>
+                } @else {
+                  <div class="text-center p-4 text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    {{ languageService.T('noProductsAvailableForCombo') }}
+                  </div>
+                }
+               </fieldset>
+            }
+          </div>
+        </div>
+        
+        <!-- Footer actions -->
+        <div class="lg:col-span-2 flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 shrink-0">
+          <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+          <button type="submit" [disabled]="itemForm.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed">{{ languageService.T('savePortfolioItem') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

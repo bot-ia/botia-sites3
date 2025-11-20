@@ -1,0 +1,135 @@
+<div class="space-y-6">
+  <!-- Header & Filters -->
+  <div class="flex flex-wrap justify-between items-center gap-4">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white">{{ languageService.T('dashboard') }}</h1>
+    <div class="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+      <!-- Preset Buttons -->
+      <button (click)="setDatePreset('7d')" [class.bg-indigo-600]="activePreset() === '7d'" [class.text-white]="activePreset() === '7d'" [class.hover:bg-slate-100]="activePreset() !== '7d'" [class.dark:hover:bg-slate-700]="activePreset() !== '7d'" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors">{{ languageService.T('last7Days') }}</button>
+      <button (click)="setDatePreset('30d')" [class.bg-indigo-600]="activePreset() === '30d'" [class.text-white]="activePreset() === '30d'" [class.hover:bg-slate-100]="activePreset() !== '30d'" [class.dark:hover:bg-slate-700]="activePreset() !== '30d'" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors">{{ languageService.T('last30Days') }}</button>
+      <button (click)="setDatePreset('mtd')" [class.bg-indigo-600]="activePreset() === 'mtd'" [class.text-white]="activePreset() === 'mtd'" [class.hover:bg-slate-100]="activePreset() !== 'mtd'" [class.dark:hover:bg-slate-700]="activePreset() !== 'mtd'" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors">{{ languageService.T('thisMonth') }}</button>
+      <!-- Custom Date Inputs -->
+      <div class="flex items-center gap-2">
+        <input type="date" [(ngModel)]="startDate" (ngModelChange)="onCustomDateChange()" class="bg-slate-100 dark:bg-slate-700 text-sm rounded-md p-1.5 border border-slate-300 dark:border-slate-600 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+        <span class="text-slate-400 dark:text-slate-500">-</span>
+        <input type="date" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" class="bg-slate-100 dark:bg-slate-700 text-sm rounded-md p-1.5 border border-slate-300 dark:border-slate-600 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+      </div>
+       <button (click)="exportToCsv()" [title]="languageService.T('exportToExcel')" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  @if(isLoading()) {
+    <div class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('loading') }}</div>
+  } @else {
+    <!-- KPIs -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+        <h3 class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ languageService.T('totalInteractions') }}</h3>
+        <p class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ totalInteractions() }}</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+        <h3 class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ languageService.T('humanHandoffs') }}</h3>
+        <p class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ humanHandoffs() }}</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+        <h3 class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ languageService.T('quotesGenerated') }}</h3>
+        <p class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ quotesGenerated() }}</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+        <h3 class="text-slate-500 dark:text-slate-400 text-sm font-medium">{{ languageService.T('ordersGenerated') }}</h3>
+        <p class="text-3xl font-bold text-slate-900 dark:text-white mt-2">{{ ordersGenerated() }}</p>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Interactions Over Time -->
+      <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+        <h3 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">{{ languageService.T('interactionsOverTime') }}</h3>
+        @if (interactionsByDay().length > 0) {
+          <div class="h-64 flex items-end gap-2">
+             @for(day of interactionsByDay(); track day.day) {
+              <div class="flex-1 flex flex-col items-center justify-end group">
+                  <div class="w-full bg-indigo-500 rounded-t-sm hover:bg-indigo-400 transition-colors" [style.height.%]="(day.count / maxDailyInteraction()) * 100"></div>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ day.day.slice(5) }}</span>
+              </div>
+             }
+          </div>
+        } @else {
+          <div class="h-64 flex items-center justify-center text-slate-500">{{ languageService.T('noDataAvailable') }}</div>
+        }
+      </div>
+      <!-- Interactions by Channel -->
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+         <h3 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">{{ languageService.T('interactionsByChannel') }}</h3>
+          @if(totalInteractions() > 0) {
+            <div class="h-64 flex flex-col justify-center gap-4">
+              @for(channel of interactionsByChannel(); track channel.channel) {
+                <div>
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium text-slate-700 dark:text-slate-300 capitalize">{{ channel.channel }}</span>
+                    <span class="text-slate-500 dark:text-slate-400">{{ ((channel.count / totalInteractions()) * 100).toFixed(1) }}%</span>
+                  </div>
+                  <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                    <div class="h-2.5 rounded-full" 
+                         [style.width.%]="(channel.count / totalInteractions()) * 100"
+                         [class.bg-blue-500]="channel.channel === 'web'"
+                         [class.bg-green-500]="channel.channel === 'whatsapp'"
+                         [class.bg-slate-500]="channel.channel === 'other'">
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+             <div class="h-64 flex items-center justify-center text-slate-500">{{ languageService.T('noDataAvailable') }}</div>
+          }
+      </div>
+    </div>
+
+    <!-- Recent Interactions Table -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+       <h3 class="text-xl font-semibold text-slate-900 dark:text-white p-6">{{ languageService.T('recentInteractions') }}</h3>
+       <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+            <tr>
+              <th class="p-4 font-semibold">{{ languageService.T('timestamp') }}</th>
+              <th class="p-4 font-semibold">{{ languageService.T('channel') }}</th>
+              <th class="p-4 font-semibold">{{ languageService.T('outcome') }}</th>
+              <th class="p-4 font-semibold">{{ languageService.T('humanHandoff') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(log of recentInteractions(); track log.id) {
+              <tr class="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <td class="p-4 text-slate-600 dark:text-slate-300 text-sm">{{ formatTimestamp(log.timestamp) }}</td>
+                <td class="p-4 text-slate-600 dark:text-slate-300 text-sm capitalize">{{ log.channel }}</td>
+                <td class="p-4 text-slate-600 dark:text-slate-300 text-sm capitalize">{{ log.outcome }}</td>
+                <td class="p-4 text-sm">
+                  <span class="px-2 py-0.5 text-xs rounded-full"
+                    [class.bg-yellow-100]="log.humanHandoff"
+                    [class.dark:bg-yellow-900]="log.humanHandoff"
+                    [class.text-yellow-800]="log.humanHandoff"
+                    [class.dark:text-yellow-300]="log.humanHandoff"
+                    [class.bg-slate-100]="!log.humanHandoff"
+                    [class.dark:bg-slate-700]="!log.humanHandoff"
+                    [class.text-slate-800]="!log.humanHandoff"
+                    [class.dark:text-slate-300]="!log.humanHandoff"
+                  >
+                    {{ log.humanHandoff ? languageService.T('yes') : languageService.T('no') }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="p-8 text-center text-slate-500">{{ languageService.T('noInteractionsFound') }}</td></tr>
+            }
+          </tbody>
+        </table>
+       </div>
+    </div>
+  }
+</div>

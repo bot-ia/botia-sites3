@@ -1,0 +1,225 @@
+<app-toast></app-toast>
+@if (authService.currentUser(); as user) {
+  <div class="flex h-screen bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300">
+    <!-- Sidebar -->
+    <aside 
+      class="bg-white dark:bg-slate-800 transition-all duration-300 ease-in-out flex flex-col border-r border-slate-200 dark:border-slate-700"
+      [class.w-64]="isSidebarOpen()"
+      [class.w-20]="!isSidebarOpen()">
+      
+      <!-- Sidebar Header -->
+      <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 h-16 shrink-0">
+        <div class="flex items-center" [class.hidden]="!isSidebarOpen()">
+          <svg class="w-8 h-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+          </svg>
+          <span class="ml-3 text-2xl font-bold text-slate-800 dark:text-white">{{ languageService.T('botIA') }}</span>
+        </div>
+        <button (click)="toggleSidebar()" [title]="isSidebarOpen() ? 'Collapse sidebar' : 'Expand sidebar'" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Main Navigation -->
+      <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
+        <!-- Dashboard -->
+        <a href="#" (click)="changeView('dashboard'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'dashboard'" [class.dark:bg-indigo-900/50]="activeView() === 'dashboard'" [class.text-indigo-600]="activeView() === 'dashboard'" [class.dark:text-indigo-400]="activeView() === 'dashboard'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+          <svg class="w-6 h-6 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" /></svg>
+          <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('dashboard') }}</span>
+        </a>
+
+        <!-- Bot-specific links -->
+        @if (selectedBot()) {
+          <!-- Aesthetic Clinic Bot Links -->
+          @if (isAestheticClinicBot()) {
+            <a href="#" (click)="changeView('patient_appointments'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'patient_appointments'" [class.dark:bg-indigo-900/50]="activeView() === 'patient_appointments'" [class.text-indigo-600]="activeView() === 'patient_appointments'" [class.dark:text-indigo-400]="activeView() === 'patient_appointments'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18M-4.5 12h22.5" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('patientAppointments') }}</span>
+            </a>
+            <a href="#" (click)="changeView('procedures'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'procedures'" [class.dark:bg-indigo-900/50]="activeView() === 'procedures'" [class.text-indigo-600]="activeView() === 'procedures'" [class.dark:text-indigo-400]="activeView() === 'procedures'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.47 2.118v-.09a2.25 2.25 0 0 1 2.244-2.244c1.16-.01 2.232.42 3.045 1.128a2.251 2.251 0 0 1-.652 3.393V19.5a2.25 2.25 0 0 1-2.25-2.25a3.001 3.001 0 0 0-5.78 1.128m11.162-4.128a3 3 0 1 0-5.78-1.128 2.25 2.25 0 0 1-2.47-2.118v-.09a2.25 2.25 0 0 1 2.244-2.244c1.16-.01 2.232.42 3.045 1.128a2.251 2.251 0 0 1-.652 3.393V15a2.25 2.25 0 0 1-2.25-2.25a3.001 3.001 0 0 0-5.78 1.128" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('procedures') }}</span>
+            </a>
+            <a href="#" (click)="changeView('professionals'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'professionals'" [class.dark:bg-indigo-900/50]="activeView() === 'professionals'" [class.text-indigo-600]="activeView() === 'professionals'" [class.dark:text-indigo-400]="activeView() === 'professionals'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('professionals') }}</span>
+            </a>
+             <a href="#" (click)="changeView('calendars'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'calendars'" [class.dark:bg-indigo-900/50]="activeView() === 'calendars'" [class.text-indigo-600]="activeView() === 'calendars'" [class.dark:text-indigo-400]="activeView() === 'calendars'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('calendars') }}</span>
+            </a>
+            <a href="#" (click)="changeView('notifications'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'notifications'" [class.dark:bg-indigo-900/50]="activeView() === 'notifications'" [class.text-indigo-600]="activeView() === 'notifications'" [class.dark:text-indigo-400]="activeView() === 'notifications'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('notifications') }}</span>
+            </a>
+          }
+
+          <!-- Product Bot Links -->
+          @if (isProductBot()) {
+            <a href="#" (click)="changeView('portfolio'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'portfolio'" [class.dark:bg-indigo-900/50]="activeView() === 'portfolio'" [class.text-indigo-600]="activeView() === 'portfolio'" [class.dark:text-indigo-400]="activeView() === 'portfolio'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ selectedBot()?.portfolioMenuTitle || languageService.T('portfolio') }}</span>
+            </a>
+          }
+
+          <!-- Repair Bot Links -->
+          @if (isRepairBot()) {
+            <a href="#" (click)="changeView('service_orders'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'service_orders'" [class.dark:bg-indigo-900/50]="activeView() === 'service_orders'" [class.text-indigo-600]="activeView() === 'service_orders'" [class.dark:text-indigo-400]="activeView() === 'service_orders'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('serviceOrders') }}</span>
+            </a>
+          }
+
+          <!-- General Configuration Links -->
+          <div class="pt-4 mt-2 border-t border-slate-200 dark:border-slate-700">
+            @if (isUserKnowledgeBaseEnabled()) {
+              <a href="#" (click)="changeView('user_knowledge_base'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'user_knowledge_base'" [class.dark:bg-indigo-900/50]="activeView() === 'user_knowledge_base'" [class.text-indigo-600]="activeView() === 'user_knowledge_base'" [class.dark:text-indigo-400]="activeView() === 'user_knowledge_base'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+                <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('userKnowledgeBase') }}</span>
+              </a>
+            }
+             @if (isProductBot() || isRepairBot()) {
+                <a href="#" (click)="changeView('prompts'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'prompts'" [class.dark:bg-indigo-900/50]="activeView() === 'prompts'" [class.text-indigo-600]="activeView() === 'prompts'" [class.dark:text-indigo-400]="activeView() === 'prompts'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <svg class="w-6 h-6 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 0 0 2.25-2.25V8.25a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 8.25v7.5A2.25 2.25 0 0 0 6.75 18Z" /></svg>
+                  <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('prompts') }}</span>
+                </a>
+                <a href="#" (click)="changeView('knowledge'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'knowledge'" [class.dark:bg-indigo-900/50]="activeView() === 'knowledge'" [class.text-indigo-600]="activeView() === 'knowledge'" [class.dark:text-indigo-400]="activeView() === 'knowledge'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <svg class="w-6 h-6 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
+                  <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('knowledgeBase') }}</span>
+                </a>
+             }
+             @if (isProductBot() || isAestheticClinicBot()) {
+                <a href="#" (click)="changeView('business_rules'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'business_rules'" [class.dark:bg-indigo-900/50]="activeView() === 'business_rules'" [class.text-indigo-600]="activeView() === 'business_rules'" [class.dark:text-indigo-400]="activeView() === 'business_rules'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <svg class="w-6 h-6 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                  <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('businessSettings') }}</span>
+                </a>
+             }
+            <a href="#" (click)="changeView('contacts'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'contacts'" [class.dark:bg-indigo-900/50]="activeView() === 'contacts'" [class.text-indigo-600]="activeView() === 'contacts'" [class.dark:text-indigo-400]="activeView() === 'contacts'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" /></svg>
+                <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('contacts') }}</span>
+            </a>
+            <a href="#" (click)="changeView('links'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'links'" [class.dark:bg-indigo-900/50]="activeView() === 'links'" [class.text-indigo-600]="activeView() === 'links'" [class.dark:text-indigo-400]="activeView() === 'links'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg class="w-6 h-6 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('specialLinks') }}</span>
+            </a>
+             <a href="#" (click)="changeView('change_log'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'change_log'" [class.dark:bg-indigo-900/50]="activeView() === 'change_log'" [class.text-indigo-600]="activeView() === 'change_log'" [class.dark:text-indigo-400]="activeView() === 'change_log'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg class="w-6 h-6 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('changeLog') }}</span>
+            </a>
+          </div>
+        }
+        
+        <!-- Admin Panel (for admins) -->
+        @if (user.role === 'admin') {
+          <div class="pt-4 mt-2 border-t border-slate-200 dark:border-slate-700">
+             <a href="#" (click)="changeView('admin'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'admin'" [class.dark:bg-indigo-900/50]="activeView() === 'admin'" [class.text-indigo-600]="activeView() === 'admin'" [class.dark:text-indigo-400]="activeView() === 'admin'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg class="w-6 h-6 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('superAdmin') }}</span>
+            </a>
+          </div>
+        }
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="p-4 border-t border-slate-200 dark:border-slate-700 mt-auto shrink-0">
+        <!-- Language/Theme Toggles -->
+        <div class="flex items-center justify-center space-x-2 mb-4">
+          <button (click)="languageService.toggleLanguage()" [title]="languageService.language() === 'en' ? 'Switch to Spanish' : 'Switch to English'" class="p-2 w-12 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md">
+            @if(languageService.language() === 'es') {
+              <span class="font-bold">ES</span>
+            } @else {
+              <span class="font-bold">EN</span>
+            }
+          </button>
+        </div>
+
+        <!-- User Info -->
+        <div class="flex items-center">
+          <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-indigo-500 dark:text-indigo-400 shrink-0">
+            {{ user.email.charAt(0).toUpperCase() }}
+          </div>
+          <div class="ml-3 overflow-hidden" [class.hidden]="!isSidebarOpen()">
+            <p class="font-semibold text-sm truncate text-slate-800 dark:text-white">{{ user.email }}</p>
+            <a href="#" (click)="logout()" class="text-xs text-red-500 hover:underline">{{ languageService.T('logout') }}</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white dark:bg-slate-800 h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-700 shrink-0">
+        <!-- Bot Selector -->
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-200">
+            Cata
+          </h2>
+          @if (user.role !== 'admin') {
+            <select [ngModel]="selectedBotId()" (ngModelChange)="selectedBotId.set($event)" class="w-64 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              @if (bots().length === 0) {
+                <option [value]="null">{{ languageService.T('noBotsAvailable') }}</option>
+              } @else {
+                @for (bot of bots(); track bot.bot_id) {
+                  <option [value]="bot.bot_id">{{ bot.nombre }} ({{ bot.company }})</option>
+                }
+              }
+            </select>
+          }
+        </div>
+        
+        <!-- Header Actions -->
+        <div class="flex items-center gap-4">
+          <!-- User menu, notifications, etc. -->
+          <button class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></button>
+          <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-indigo-500 dark:text-indigo-400">
+             {{ user.email.charAt(0).toUpperCase() }}
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div class="flex-grow p-6 overflow-y-auto">
+        @if (selectedBot(); as bot) {
+          @switch (activeView()) {
+            @case ('dashboard') { <app-dashboard [botId]="bot.bot_id"></app-dashboard> }
+            @case ('knowledge') { <app-knowledge-base [botId]="bot.bot_id"></app-knowledge-base> }
+            @case ('links') { <app-special-links [botId]="bot.bot_id"></app-special-links> }
+            @case ('portfolio') { <app-portfolio [botId]="bot.bot_id"></app-portfolio> }
+            @case ('business_rules') { <app-business-rules [botId]="bot.bot_id" [botType]="bot.botType"></app-business-rules> }
+            @case ('change_log') { <app-change-log [botId]="bot.bot_id"></app-change-log> }
+            @case ('service_orders') { <app-service-orders [botId]="bot.bot_id"></app-service-orders> }
+            @case ('user_knowledge_base') { <app-user-knowledge-base [botId]="bot.bot_id" [webhookUrl]="bot.userKnowledgeBaseN8nWebhook || undefined" [botType]="bot.botType"></app-user-knowledge-base> }
+            @case ('prompts') { <app-prompts [botId]="bot.bot_id"></app-prompts> }
+            @case ('procedures') { <app-procedures [botId]="bot.bot_id"></app-procedures> }
+            @case ('professionals') { <app-professionals [botId]="bot.bot_id"></app-professionals> }
+            @case ('calendars') { <app-calendars [botId]="bot.bot_id"></app-calendars> }
+            @case ('contacts') { <app-contacts [botId]="bot.bot_id"></app-contacts> }
+            @case ('patient_appointments') { <app-patient-appointments [botId]="bot.bot_id"></app-patient-appointments> }
+            @case ('notifications') { <app-notifications [botId]="bot.bot_id"></app-notifications> }
+          }
+        } @else {
+          @if(user.role === 'admin') {
+              <app-admin></app-admin>
+          } @else {
+            <div class="h-full flex items-center justify-center">
+              <div class="text-center p-8 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                @if (bots().length > 0) {
+                  <h2 class="text-2xl font-bold mb-2">{{ languageService.T('noBotSelected') }}</h2>
+                  <p class="text-slate-500 dark:text-slate-400">{{ languageService.T('selectBotToBegin') }}</p>
+                } @else {
+                  <h2 class="text-2xl font-bold mb-2">{{ languageService.T('noBotsAvailable') }}</h2>
+                  <p class="text-slate-500 dark:text-slate-400 max-w-md">{{ languageService.T('noBotsAssociated') }}</p>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </main>
+  </div>
+} @else {
+  <app-login></app-login>
+}

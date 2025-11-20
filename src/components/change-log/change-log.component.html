@@ -1,0 +1,71 @@
+<div class="animate-fade-in">
+  <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">{{ languageService.T('changeLogTitle') }}</h1>
+
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700">
+    <!-- Filtering Controls -->
+    <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap gap-4 items-center">
+      <div>
+        <label for="filterDate" class="text-sm font-medium text-slate-500 dark:text-slate-400 mr-2">{{ languageService.T('filterByDate') }}:</label>
+        <input 
+          type="date" 
+          id="filterDate" 
+          class="bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          [ngModel]="filterDate()"
+          (ngModelChange)="filterDate.set($event)">
+      </div>
+      <div>
+        <label for="filterEntityType" class="text-sm font-medium text-slate-500 dark:text-slate-400 mr-2">{{ languageService.T('filterByEntityType') }}:</label>
+        <select 
+          id="filterEntityType"
+          class="bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          [ngModel]="filterEntityType()"
+          (ngModelChange)="filterEntityType.set($event)">
+          <option value="All">{{ languageService.T('allTypes') }}</option>
+          @for(type of entityTypes; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    
+    @if (isLoading()) {
+      <div class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('loadingChangeLog') }}</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+            <tr>
+              <th class="p-4 font-semibold">{{ languageService.T('logDate') }}</th>
+              <th class="p-4 font-semibold">{{ languageService.T('logUser') }}</th>
+              <th class="p-4 font-semibold">{{ languageService.T('logAction') }}</th>
+              <th class="p-4 font-semibold">{{ languageService.T('logDetails') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(log of filteredLogs(); track log.id) {
+              <tr class="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150">
+                <td class="p-4 text-slate-500 dark:text-slate-400 whitespace-nowrap text-sm">{{ formatTimestamp(log.timestamp) }}</td>
+                <td class="p-4 text-slate-600 dark:text-slate-300 text-sm font-medium">{{ log.userEmail }}</td>
+                <td class="p-4">
+                  <span class="px-3 py-1 text-xs font-medium rounded-full"
+                        [class.bg-green-100]="log.action === 'Created'" [class.text-green-800]="log.action === 'Created'" [class.dark:bg-green-900/50]="log.action === 'Created'" [class.dark:text-green-300]="log.action === 'Created'"
+                        [class.bg-yellow-100]="log.action === 'Updated'" [class.text-yellow-800]="log.action === 'Updated'" [class.dark:bg-yellow-900/50]="log.action === 'Updated'" [class.dark:text-yellow-300]="log.action === 'Updated'"
+                        [class.bg-red-100]="log.action === 'Deleted'" [class.text-red-800]="log.action === 'Deleted'" [class.dark:bg-red-900/50]="log.action === 'Deleted'" [class.dark:text-red-300]="log.action === 'Deleted'">
+                    {{ log.action }}
+                  </span>
+                </td>
+                <td class="p-4 text-slate-600 dark:text-slate-300 text-sm max-w-md">{{ log.description }}</td>
+              </tr>
+            } @empty {
+               <tr>
+                <td colspan="4" class="text-center p-8 text-slate-500 dark:text-slate-400">
+                  {{ languageService.T('noChangesFound') }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
