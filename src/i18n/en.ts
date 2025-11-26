@@ -605,4 +605,6 @@ export const en = {
   cloneError: 'Failed to clone bot.',
   updateAccessSuccess: 'User access updated.',
   updateAccessError: 'Failed to update user access.',
+  widgetScript: 'Widget Script',
+  widgetScriptPlaceholder: 'Paste your website widget script here (e.g., from Chatwoot).',
 };

@@ -25,6 +25,7 @@ import { LanguageService } from './services/language.service';
 import { Bot } from './models';
 import { PromptsComponent } from './components/prompts/prompts.component';
 import { ThemeService } from './services/theme.service';
+import { WidgetService } from './services/widget.service';
 
 type ViewType = 'dashboard' | 'knowledge' | 'links' | 'admin' | 'portfolio' | 'business_rules' | 'change_log' | 'patient_appointments' | 'service_orders' | 'user_knowledge_base' | 'procedures' | 'prompts' | 'contacts' | 'professionals' | 'calendars' | 'notifications';
 
@@ -61,6 +62,7 @@ export class AppComponent {
   authService = inject(AuthService);
   languageService = inject(LanguageService);
   themeService = inject(ThemeService);
+  private widgetService = inject(WidgetService);
 
   activeView = signal<ViewType>('dashboard');
   bots = signal<Bot[]>([]);
@@ -137,6 +139,12 @@ export class AppComponent {
         this.activeView.set('dashboard');
       }
     }, { allowSignalWrites: true });
+
+    // Effect to manage widget script injection
+    effect(() => {
+      const bot = this.selectedBot();
+      this.widgetService.updateWidget(bot?.widget_script);
+    });
   }
 
   changeView(view: ViewType) {

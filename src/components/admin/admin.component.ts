@@ -188,7 +188,8 @@ export class AdminComponent {
           prompt_vision: '', 
           modelo_ia: 'gemini-2.5-flash',
           userKnowledgeBaseEnabled: false,
-          userKnowledgeBaseN8nWebhook: ''
+          userKnowledgeBaseN8nWebhook: '',
+          widget_script: ''
         };
     
     this.editingBot.set(baseBot);

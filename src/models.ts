@@ -84,6 +84,7 @@ export interface Bot {
   // New user knowledge base config
   userKnowledgeBaseEnabled?: boolean;
   userKnowledgeBaseN8nWebhook?: string | null;
+  widget_script?: string;
 }
 
 export interface User {

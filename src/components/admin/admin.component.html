@@ -397,6 +397,15 @@
             </div>
         </div>
 
+        <!-- Widget Script -->
+        <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+            <h3 class="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-4 col-span-full">{{ languageService.T('widgetScript') }}</h3>
+            <div>
+              <label for="widget_script" class="block font-semibold mb-2">{{ languageService.T('widgetScript') }}</label>
+              <textarea id="widget_script" name="widget_script" [(ngModel)]="bot.widget_script" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 h-48 resize-y font-mono text-sm" [placeholder]="languageService.T('widgetScriptPlaceholder')"></textarea>
+            </div>
+        </div>
+
         <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 shrink-0">
           <button type="button" (click)="closeBotModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button>
           <button type="submit" [disabled]="botForm.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed transition-colors">{{ languageService.T('saveBot') }}</button>

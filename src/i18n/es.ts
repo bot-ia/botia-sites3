@@ -605,4 +605,6 @@ export const es = {
   cloneError: 'Error al clonar el bot.',
   updateAccessSuccess: 'Acceso de usuario actualizado.',
   updateAccessError: 'Error al actualizar el acceso del usuario.',
+  widgetScript: 'Script del Widget',
+  widgetScriptPlaceholder: 'Pega aquí el script del widget para tu sitio web (ej: de Chatwoot).',
 };
