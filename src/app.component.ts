@@ -112,7 +112,6 @@ export class AppComponent {
         // User logged out
         this.bots.set([]);
         this.selectedBotId.set(null);
-        this.activeView.set('dashboard');
       }
     }, { allowSignalWrites: true });
 
@@ -130,7 +129,6 @@ export class AppComponent {
         (view === 'procedures' && bot.botType !== 'aesthetic_clinic') ||
         (view === 'professionals' && bot.botType !== 'aesthetic_clinic') ||
         (view === 'calendars' && bot.botType !== 'aesthetic_clinic') ||
-        (view === 'notifications' && bot.botType !== 'aesthetic_clinic') ||
         (view === 'user_knowledge_base' && !bot.userKnowledgeBaseEnabled) ||
         (view === 'knowledge' && bot.botType === 'aesthetic_clinic') ||
         (view === 'prompts' && bot.botType === 'aesthetic_clinic');

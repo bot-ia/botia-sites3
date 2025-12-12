@@ -406,6 +406,45 @@
             </div>
         </div>
 
+        <!-- Custom Attributes -->
+        <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+            <h3 class="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-4 col-span-full">{{ languageService.T('customAttributes') }}</h3>
+            <div class="space-y-4">
+              @for (attr of bot.custom_attributes; track $index) {
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-slate-100 dark:bg-slate-900/50 rounded-lg">
+                  <div>
+                    <label class="block text-xs font-medium mb-1">{{ languageService.T('attribute_key') }}</label>
+                    <input type="text" [(ngModel)]="attr.key" name="attr_key_{{$index}}" class="w-full bg-slate-50 dark:bg-slate-700 text-sm p-2 rounded-md border border-slate-300 dark:border-slate-600 font-mono">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium mb-1">{{ languageService.T('attribute_label') }}</label>
+                    <input type="text" [(ngModel)]="attr.label" name="attr_label_{{$index}}" class="w-full bg-slate-50 dark:bg-slate-700 text-sm p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium mb-1">{{ languageService.T('attribute_type') }}</label>
+                    <select [(ngModel)]="attr.type" name="attr_type_{{$index}}" class="w-full bg-slate-50 dark:bg-slate-700 text-sm p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                      <option value="text">{{ languageService.T('attribute_type_text') }}</option>
+                      <option value="select">{{ languageService.T('attribute_type_select') }}</option>
+                    </select>
+                  </div>
+                  <div class="flex items-end">
+                    <button type="button" (click)="removeAttribute($index)" class="text-red-500 hover:text-red-400 p-2 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                  </div>
+                  @if(attr.type === 'select') {
+                    <div class="md:col-span-4">
+                      <label class="block text-xs font-medium mb-1">{{ languageService.T('attribute_options') }}</label>
+                      <input type="text" [ngModel]="attr.options?.join(', ')" (ngModelChange)="updateAttributeOptionsString(attr, $event)" name="attr_options_{{$index}}" class="w-full bg-slate-50 dark:bg-slate-700 text-sm p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                    </div>
+                  }
+                </div>
+              }
+              <button type="button" (click)="addAttribute()" class="w-full text-center bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-semibold py-2 px-4 rounded-lg text-sm flex items-center justify-center">
+                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                {{ languageService.T('addAttribute') }}
+              </button>
+            </div>
+        </div>
+
         <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 shrink-0">
           <button type="button" (click)="closeBotModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg transition-colors">{{ languageService.T('cancel') }}</button>
           <button type="submit" [disabled]="botForm.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 disabled:cursor-not-allowed transition-colors">{{ languageService.T('saveBot') }}</button>

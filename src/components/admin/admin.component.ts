@@ -5,7 +5,7 @@ import { DataService } from '../../services/data.service';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ApiService } from '../../services/api.service';
-import { Bot, User, Prompt, SpecialLink, KnowledgeItem, PortfolioItem, BotType } from '../../models';
+import { Bot, User, Prompt, SpecialLink, KnowledgeItem, PortfolioItem, BotType, CustomAttribute } from '../../models';
 import { ToastService } from '../../services/toast.service';
 
 type AdminTab = 'users' | 'prompts' | 'links' | 'knowledge';
@@ -189,8 +189,13 @@ export class AdminComponent {
           modelo_ia: 'gemini-2.5-flash',
           userKnowledgeBaseEnabled: false,
           userKnowledgeBaseN8nWebhook: '',
-          widget_script: ''
+          widget_script: '',
+          custom_attributes: []
         };
+    
+    if (!baseBot.custom_attributes) {
+      baseBot.custom_attributes = [];
+    }
     
     this.editingBot.set(baseBot);
     this.isBotModalOpen.set(true);
@@ -210,6 +215,17 @@ export class AdminComponent {
     if (botPayload.botType !== 'product') {
       delete (botPayload as Partial<Bot>).portfolioMenuTitle;
     }
+    if (botPayload.custom_attributes) {
+      botPayload.custom_attributes = botPayload.custom_attributes
+        .filter(attr => attr.key && attr.key.trim() && attr.label && attr.label.trim())
+        .map(attr => {
+            const cleanAttr: CustomAttribute = { key: attr.key, label: attr.label, type: attr.type };
+            if (attr.type === 'select' && attr.options) {
+                cleanAttr.options = attr.options;
+            }
+            return cleanAttr;
+        });
+    }
 
     this.isLoading.set(true);
     try {
@@ -222,7 +238,6 @@ export class AdminComponent {
       if(this.selectedBot()?.bot_id === botPayload.bot_id) {
           const reselectedBot = updatedBots.find(b => b.bot_id === botPayload.bot_id);
           if (reselectedBot) {
-            // Re-selecting is async, so await it to ensure data is fresh.
             await this.selectBot(reselectedBot);
           } else {
             this.selectedBot.set(null);
@@ -330,6 +345,31 @@ export class AdminComponent {
       } finally {
         this.isLoading.set(false);
       }
+  }
+
+  // CUSTOM ATTRIBUTES
+  addAttribute() {
+    this.editingBot.update(bot => {
+        if (!bot) return bot;
+        const newBot = { ...bot };
+        if (!newBot.custom_attributes) {
+            newBot.custom_attributes = [];
+        }
+        newBot.custom_attributes.push({ key: '', label: '', type: 'text', options: [] });
+        return newBot;
+    });
+  }
+
+  removeAttribute(index: number) {
+      this.editingBot.update(bot => {
+          if (!bot || !bot.custom_attributes) return bot;
+          bot.custom_attributes.splice(index, 1);
+          return { ...bot };
+      });
+  }
+  
+  updateAttributeOptionsString(attribute: CustomAttribute, optionsString: string) {
+      attribute.options = optionsString.split(',').map(s => s.trim()).filter(Boolean);
   }
 
 
@@ -484,5 +524,9 @@ export class AdminComponent {
         promptContentRef.selectionStart = promptContentRef.selectionEnd = start + variable.length + 5;
       }, 0);
     }
+  }
+
+  trackByIndex(index: number, item: any): any {
+    return index;
   }
 }

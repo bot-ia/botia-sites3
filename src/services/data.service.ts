@@ -239,9 +239,10 @@ export class DataService {
   async deleteContact(contact: Contact): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${contact.bot_id}/contacts/${contact.contact_id}`));
   }
-  async importContactsFromCsv(botId: string, file: File): Promise<CsvImportResponse> {
+  async importContactsFromCsv(botId: string, file: File, mapping: Record<string, string>): Promise<CsvImportResponse> {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('mapping', JSON.stringify(mapping));
     return firstValueFrom(this.http.post<CsvImportResponse>(`${this.apiService.baseUrl}/bots/${botId}/contacts/import_csv`, formData));
   }
   async syncWithChatwood(botId: string): Promise<{ message: string }> {

@@ -61,6 +61,13 @@ export interface BusinessRulesConfig {
 
 export type BotType = 'product' | 'appointment' | 'repair' | 'aesthetic_clinic';
 
+export interface CustomAttribute {
+  key: string;
+  label: string;
+  type: 'text' | 'select';
+  options?: string[]; // For 'select' type
+}
+
 export interface Bot {
   bot_id: string;
   nombre: string;
@@ -85,6 +92,8 @@ export interface Bot {
   userKnowledgeBaseEnabled?: boolean;
   userKnowledgeBaseN8nWebhook?: string | null;
   widget_script?: string;
+  // Custom attributes configuration
+  custom_attributes?: CustomAttribute[];
 }
 
 export interface User {
@@ -238,6 +247,7 @@ export interface Contact {
   name: string | null;
   phone_number: string | null;
   email: string | null;
+  attributes?: Record<string, any>;
   created_at: string;
   updated_at: string;
 }

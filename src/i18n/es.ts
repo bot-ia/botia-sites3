@@ -111,6 +111,14 @@ export const es = {
   functionalities: 'Funcionalidades',
   enableUserKnowledgeBase: 'Habilitar Base de Conocimiento del Usuario',
   userKnowledgeBaseWebhook: 'Webhook n8n para Base de Conocimiento',
+  customAttributes: 'Atributos Personalizados',
+  addAttribute: 'Añadir Atributo',
+  attribute_key: 'Clave (interna, sin espacios)',
+  attribute_label: 'Etiqueta (visible al usuario)',
+  attribute_type: 'Tipo',
+  attribute_type_text: 'Texto',
+  attribute_type_select: 'Lista de opciones',
+  attribute_options: 'Opciones (separadas por coma)',
 
   keyOpenaiLabel: 'Clave OpenAI',
   keyOpenaiPlaceholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
@@ -193,7 +201,7 @@ export const es = {
   linkLabel: 'Etiqueta',
   labelPlaceholder: 'ej., Sitio Web de la Empresa',
   urlLabel: 'URL',
-  urlPlaceholder: 'https://www.ejemplo.com',
+  urlPlaceholder: 'https://www.example.com',
   saveLink: 'Guardar Link',
   
   // Portfolio
@@ -401,14 +409,13 @@ export const es = {
   noContactsConfigured: 'Aún no se han configurado contactos para este bot.',
   importContacts: 'Importar Contactos',
   selectCsvFile: 'Seleccionar archivo CSV',
-  csvFileFormat: 'El archivo debe ser CSV con las columnas: name, phone_number, email',
   import: 'Importar',
   syncingWithChatwood: 'Sincronizando con Chatwood...',
   syncSuccessMessage: 'La sincronización con Chatwood se inició correctamente. Puede tardar unos minutos en completarse.',
   syncErrorMessage: 'Error al iniciar la sincronización con Chatwood.',
   importSuccess: 'Contactos importados con éxito.',
   importError: 'Error al importar contactos.',
-  importing: 'Importando',
+  importing: 'Importando...',
   contactNameInvalid: 'El nombre debe tener al menos 2 caracteres.',
   contactPhoneInvalid: 'El teléfono debe tener formato internacional (ej: +573001234567).',
   contactPhoneRequired: 'El número de teléfono es obligatorio.',
@@ -420,6 +427,16 @@ export const es = {
   importSuccessful: "Exitosas",
   importFailed: "Fallidas",
   importErrorsList: "Detalles de Errores",
+  additionalInformation: "Información Adicional",
+  // CSV Import Wizard
+  importWizardStep1: "Paso 1: Subir Archivo",
+  importWizardStep2: "Paso 2: Mapear Columnas",
+  csvFileColumn: "Columna en Archivo",
+  saveAs: "Guardar como...",
+  ignoreColumn: "Ignorar",
+  next: "Siguiente",
+  back: "Atrás",
+
 
   // Patient Appointments
   managePatientAppointments: "Gestionar Citas de Pacientes",

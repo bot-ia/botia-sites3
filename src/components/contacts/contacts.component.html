@@ -1,4 +1,5 @@
 <div class="animate-fade-in">
+  <!-- Cabecera -->
   <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
     <h1 class="text-3xl font-bold text-slate-900 dark:text-white">{{ languageService.T('contacts') }}</h1>
      <div class="flex items-center gap-2">
@@ -39,6 +40,9 @@
               <th class="p-4 font-semibold cursor-pointer hover:text-slate-800 dark:hover:text-white" (click)="updateSort('name')">{{ languageService.T('contactName') }}</th>
               <th class="p-4 font-semibold cursor-pointer hover:text-slate-800 dark:hover:text-white" (click)="updateSort('phone_number')">{{ languageService.T('phoneNumber') }}</th>
               <th class="p-4 font-semibold cursor-pointer hover:text-slate-800 dark:hover:text-white" (click)="updateSort('email')">{{ languageService.T('email') }}</th>
+              @for(attr of selectedBot()?.custom_attributes; track attr.key) {
+                <th class="p-4 font-semibold cursor-pointer hover:text-slate-800 dark:hover:text-white" (click)="updateSort(attr.key)">{{ attr.label }}</th>
+              }
               <th class="p-4 font-semibold cursor-pointer hover:text-slate-800 dark:hover:text-white" (click)="updateSort('created_at')">{{ languageService.T('createdAt') }}</th>
               <th class="p-4 font-semibold text-right">{{ languageService.T('actions') }}</th>
             </tr>
@@ -49,6 +53,9 @@
                 <td class="p-4 font-medium text-slate-800 dark:text-white">{{ contact.name }}</td>
                 <td class="p-4 text-slate-600 dark:text-slate-300">{{ contact.phone_number }}</td>
                 <td class="p-4 text-slate-600 dark:text-slate-300">{{ contact.email }}</td>
+                @for(attr of selectedBot()?.custom_attributes; track attr.key) {
+                  <td class="p-4 text-slate-600 dark:text-slate-300">{{ contact.attributes?.[attr.key] }}</td>
+                }
                 <td class="p-4 text-slate-500 dark:text-slate-400">{{ formatDate(contact.created_at) }}</td>
                 <td class="p-4 text-right">
                    <button (click)="openModal(contact)" class="text-blue-500 hover:text-blue-400 mr-4 text-sm">{{ languageService.T('edit') }}</button>
@@ -56,7 +63,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="text-center p-8 text-slate-500 dark:text-slate-400">{{ searchTerm() ? languageService.T('noContactsFound') : languageService.T('noContactsConfigured') }}</td></tr>
+              <tr><td [attr.colspan]="5 + (selectedBot()?.custom_attributes?.length || 0)" class="text-center p-8 text-slate-500 dark:text-slate-400">{{ searchTerm() ? languageService.T('noContactsFound') : languageService.T('noContactsConfigured') }}</td></tr>
             }
           </tbody>
         </table>
@@ -68,33 +75,58 @@
 <!-- Edit/Create Modal -->
 @if (isModalOpen() && editingContact(); as contact) {
   <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-lg border border-slate-200 dark:border-slate-700">
-      <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(contact.contact_id ? 'editContact' : 'createContact') }}</h2>
-      <form #form="ngForm" (ngSubmit)="saveContact()">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+      <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white shrink-0">{{ languageService.T(contact.contact_id ? 'editContact' : 'createContact') }}</h2>
+      <form #form="ngForm" (ngSubmit)="saveContact()" class="flex-grow overflow-y-auto pr-4 -mr-4">
         <div class="space-y-4 text-slate-600 dark:text-slate-300">
-          <div>
-            <label class="block mb-2 font-semibold">{{ languageService.T('contactName') }}</label>
-            <input type="text" [(ngModel)]="contact.name" name="name" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded-md border" [class.border-red-500]="contactValidationErrors().name" [class.border-slate-300]="!contactValidationErrors().name" [class.dark:border-slate-600]="!contactValidationErrors().name">
-            @if(contactValidationErrors().name) {
-              <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().name }}</p>
-            }
-          </div>
-          <div>
-            <label class="block mb-2 font-semibold">{{ languageService.T('phoneNumber') }}</label>
-            <input type="tel" [(ngModel)]="contact.phone_number" name="phone_number" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded-md border" [placeholder]="languageService.T('contactPhonePlaceholder')" [class.border-red-500]="contactValidationErrors().phone_number" [class.border-slate-300]="!contactValidationErrors().phone_number" [class.dark:border-slate-600]="!contactValidationErrors().phone_number">
-            @if(contactValidationErrors().phone_number) {
-              <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().phone_number }}</p>
-            }
+          <!-- Campos fijos -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block mb-2 font-semibold">{{ languageService.T('contactName') }}</label>
+              <input type="text" [(ngModel)]="contact.name" name="name" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded-md border" [class.border-red-500]="contactValidationErrors().name" [class.border-slate-300]="!contactValidationErrors().name" [class.dark:border-slate-600]="!contactValidationErrors().name">
+              @if(contactValidationErrors().name) { <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().name }}</p> }
+            </div>
+            <div>
+              <label class="block mb-2 font-semibold">{{ languageService.T('phoneNumber') }}</label>
+              <input type="tel" [(ngModel)]="contact.phone_number" name="phone_number" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded-md border" [placeholder]="languageService.T('contactPhonePlaceholder')" [class.border-red-500]="contactValidationErrors().phone_number" [class.border-slate-300]="!contactValidationErrors().phone_number" [class.dark:border-slate-600]="!contactValidationErrors().phone_number">
+              @if(contactValidationErrors().phone_number) { <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().phone_number }}</p> }
+            </div>
           </div>
           <div>
             <label class="block mb-2 font-semibold">{{ languageService.T('email') }}</label>
             <input type="email" [(ngModel)]="contact.email" name="email" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded-md border" [class.border-red-500]="contactValidationErrors().email" [class.border-slate-300]="!contactValidationErrors().email" [class.dark:border-slate-600]="!contactValidationErrors().email">
-            @if(contactValidationErrors().email) {
-              <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().email }}</p>
-            }
+            @if(contactValidationErrors().email) { <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().email }}</p> }
           </div>
         </div>
-        <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+
+        <!-- Atributos Dinámicos del Bot -->
+        @if(selectedBot()?.custom_attributes?.length) {
+          <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-semibold mb-4 text-slate-800 dark:text-white">{{ languageService.T('additionalInformation') }}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              @for(attr of selectedBot()?.custom_attributes; track attr.key) {
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ attr.label }}</label>
+                  @switch (attr.type) {
+                    @case ('text') {
+                      <input type="text" [(ngModel)]="contact.attributes![attr.key]" name="attr_{{attr.key}}" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                    }
+                    @case ('select') {
+                      <select [(ngModel)]="contact.attributes![attr.key]" name="attr_{{attr.key}}" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                        <option value="">--</option>
+                        @for(option of attr.options; track option) {
+                          <option [value]="option">{{ option }}</option>
+                        }
+                      </select>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+        
+        <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 shrink-0">
           <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
           <button type="submit" [disabled]="form.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500">{{ languageService.T('saveContact') }}</button>
         </div>
@@ -108,9 +140,7 @@
   <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700 text-center">
       <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
-        <svg class="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-        </svg>
+        <svg class="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
       </div>
       <h2 class="text-2xl font-bold mt-4 text-slate-900 dark:text-white">{{ languageService.T('deleteConfirmationTitle') }}</h2>
       <p class="text-slate-500 dark:text-slate-400 mt-2">{{ languageService.T('deleteConfirmationMessage').replace('{itemType}', languageService.T('itemType_contact')).replace('{itemName}', contact.name || contact.contact_id) }}</p>
@@ -123,26 +153,63 @@
   </div>
 }
 
-<!-- Import CSV Modal -->
+<!-- Import CSV Wizard Modal -->
 @if (isImportModalOpen()) {
   <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-lg border border-slate-200 dark:border-slate-700">
-      <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T('importContacts') }}</h2>
-      <div class="mb-4">
-        <label for="csvFile" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('selectCsvFile') }}</label>
-        <input type="file" id="csvFile" (change)="onFileSelected($event)" accept=".csv" class="w-full text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
-      </div>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">{{ languageService.T('csvFileFormat') }}</p>
-      <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-        <button type="button" (click)="isImportModalOpen.set(false)" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
-        <button type="button" (click)="importCsv()" [disabled]="!selectedFile() || isImporting()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 w-28 text-center">
-           @if(isImporting()) {
-            <span>{{ languageService.T('importing') }}...</span>
-          } @else {
-            <span>{{ languageService.T('import') }}</span>
-          }
-        </button>
-      </div>
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-3xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+      @if(importStep() === 1) {
+        <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T('importWizardStep1') }}</h2>
+        <div class="mb-4">
+          <label for="csvFile" class="block text-slate-600 dark:text-slate-300 font-semibold mb-2">{{ languageService.T('selectCsvFile') }}</label>
+          <input type="file" id="csvFile" (change)="onFileSelected($event)" accept=".csv" class="w-full text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+        </div>
+        <div class="flex justify-end gap-4 mt-auto pt-6 border-t border-slate-200 dark:border-slate-700">
+          <button type="button" (click)="closeImportModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+        </div>
+      }
+      @if(importStep() === 2) {
+        <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T('importWizardStep2') }}</h2>
+        <div class="overflow-y-auto flex-grow -mx-8 px-8">
+            <table class="w-full text-left">
+              <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400 sticky top-0">
+                  <tr>
+                      <th class="p-3 font-semibold">{{ languageService.T('csvFileColumn') }}</th>
+                      <th class="p-3 font-semibold">{{ languageService.T('saveAs') }}</th>
+                  </tr>
+              </thead>
+              <tbody>
+                @for(header of csvHeaders(); track header) {
+                  <tr class="border-b border-slate-200 dark:border-slate-700">
+                    <td class="p-3 font-mono text-slate-700 dark:text-slate-200">{{ header }}</td>
+                    <td class="p-3">
+                      <select [value]="csvColumnMapping()[header]?.target || 'ignore'" (change)="updateMapping(header, $any($event.target).value)" class="w-full bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600">
+                          <option value="ignore">{{ languageService.T('ignoreColumn') }}</option>
+                          <optgroup [label]="'Campos Estándar'">
+                            <option value="name">{{ languageService.T('contactName') }}</option>
+                            <option value="phone_number">{{ languageService.T('phoneNumber') }}</option>
+                            <option value="email">{{ languageService.T('email') }}</option>
+                          </optgroup>
+                          @if(selectedBot()?.custom_attributes?.length) {
+                            <optgroup [label]="languageService.T('customAttributes')">
+                              @for(attr of selectedBot()?.custom_attributes; track attr.key) {
+                                <option [value]="'attribute:' + attr.key">{{ attr.label }}</option>
+                              }
+                            </optgroup>
+                          }
+                      </select>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+        </div>
+        <div class="flex justify-between gap-4 mt-auto pt-6 border-t border-slate-200 dark:border-slate-700">
+          <button type="button" (click)="resetImportWizard()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('back') }}</button>
+          <button type="button" (click)="importCsv()" [disabled]="!selectedFile() || isImporting()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 w-32 text-center">
+            @if(isImporting()) { <span>{{ languageService.T('importing') }}</span> } @else { <span>{{ languageService.T('import') }}</span> }
+          </button>
+        </div>
+      }
     </div>
   </div>
 }
@@ -152,13 +219,11 @@
   <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
       <h2 class="text-2xl font-bold mb-4 shrink-0 text-slate-900 dark:text-white">{{ languageService.T('importResultTitle') }}</h2>
-      
       <div class="grid grid-cols-3 gap-4 mb-4 text-center shrink-0">
         <div class="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg"><div class="text-2xl font-bold text-slate-800 dark:text-white">{{ result.total_rows }}</div><div class="text-sm text-slate-500 dark:text-slate-400">{{ languageService.T('importTotalRows') }}</div></div>
         <div class="p-4 bg-green-100 dark:bg-green-900/50 rounded-lg"><div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ result.successful_imports }}</div><div class="text-sm text-slate-500 dark:text-slate-400">{{ languageService.T('importSuccessful') }}</div></div>
         <div class="p-4 bg-red-100 dark:bg-red-900/50 rounded-lg"><div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ result.failed_imports }}</div><div class="text-sm text-slate-500 dark:text-slate-400">{{ languageService.T('importFailed') }}</div></div>
       </div>
-
       @if (result.errors && result.errors.length > 0) {
         <div class="flex-grow overflow-y-auto mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
           <h3 class="font-semibold mb-2 text-slate-800 dark:text-white">{{ languageService.T('importErrorsList') }}:</h3>
@@ -169,7 +234,6 @@
           </ul>
         </div>
       }
-
       <div class="flex justify-end gap-4 mt-6 shrink-0 pt-4 border-t border-slate-200 dark:border-slate-700">
         <button type="button" (click)="closeImportResultModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('close') }}</button>
       </div>
