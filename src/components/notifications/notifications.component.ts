@@ -79,9 +79,10 @@ export class NotificationsComponent {
   newSegmentName = signal('');
 
 
-  // Delete Campaign State
+  // Delete States
   campaignToDelete = signal<Campaign | null>(null);
   campaignToExecute = signal<Campaign | null>(null);
+  contactToRemove = signal<CampaignContact | null>(null);
 
   // Permissions & Computed Data
   isAdmin = computed(() => this.authService.currentUser()?.role === 'admin');
@@ -306,11 +307,14 @@ export class NotificationsComponent {
     this.isCampaignLoading.set(true);
     this.selectedCampaign.set(null);
 
-    const [campaignDetails, contacts, template] = await Promise.all([
+    const [campaignDetails, contacts, template, allBotContacts] = await Promise.all([
       this.dataService.getCampaign(this.botId(), campaign.id),
       this.dataService.getCampaignContacts(this.botId(), campaign.id),
       this.dataService.getWaTemplateDetail(this.botId(), campaign.template_id),
+      this.dataService.getContacts(this.botId())
     ]);
+    
+    this.allBotContacts.set(allBotContacts);
     
     if (!campaignDetails || !template) {
       this.isCampaignLoading.set(false);
@@ -531,6 +535,40 @@ export class NotificationsComponent {
       this.cancelDeleteCampaign();
     }
   }
+  
+  requestRemoveContact(contact: CampaignContact) {
+    this.contactToRemove.set(contact);
+  }
+
+  cancelRemoveContact() {
+    this.contactToRemove.set(null);
+  }
+
+  async confirmRemoveContact() {
+    const contact = this.contactToRemove();
+    const campaign = this.selectedCampaign();
+    if (!contact || !campaign) return;
+
+    try {
+      await this.dataService.removeContactFromCampaign(this.botId(), campaign.id, contact.id);
+      this.toastService.showSuccess(this.languageService.T('deleteSuccess'));
+      
+      this.selectedCampaign.update(c => {
+        if (!c) return null;
+        const updatedContacts = c.contacts.filter(ct => ct.id !== contact.id);
+        return { ...c, contacts: updatedContacts };
+      });
+
+      this.campaigns.update(cs => cs.map(c => 
+          c.id === campaign.id ? { ...c, total_contacts: c.total_contacts - 1 } : c
+      ));
+
+    } catch (e) {
+      this.toastService.showError(this.languageService.T('deleteError'));
+    } finally {
+      this.cancelRemoveContact();
+    }
+  }
 
   // --- SEGMENTATION ---
   addSegmentFilter() {
@@ -680,6 +718,11 @@ export class NotificationsComponent {
 
   getTemplateName(templateId: number): string {
     return this.templates().find(t => t.id === templateId)?.name || 'Unknown';
+  }
+  
+  getContactNameByPhone(phone: string): string {
+    const contact = this.allBotContacts().find(c => c.phone_number === phone);
+    return contact?.name || this.languageService.T('unidentifiedContact');
   }
   
   formatDate(isoString: string | null | undefined): string {

@@ -574,6 +574,9 @@ export const en = {
   validation_campaign_no_contacts: "You must assign at least one contact before executing.",
   validation_campaign_missing_params: "Required template parameters are missing.",
   validation_campaign_wrong_status: "Only campaigns in Draft or Ready status can be executed.",
+  unidentifiedContact: 'Unidentified Contact',
+  removeContactFromCampaignConfirmation: "Are you sure you want to remove contact '{contactName}' ({contactPhone}) from this campaign?",
+
 
   // Segmentation
   manualSelection: "Manual Selection",

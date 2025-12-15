@@ -330,6 +330,11 @@ export class DataService {
     return firstValueFrom(this.http.post<any>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}/contacts`, { contacts }));
   }
 
+  async removeContactFromCampaign(botId: string, campaignId: number, campaignContactId: number): Promise<void> {
+    const url = `${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}/contacts/${campaignContactId}`;
+    return firstValueFrom(this.http.delete<void>(url));
+  }
+
   async addSegmentToCampaign(botId: string, campaignId: number, filters: Partial<FilterCondition>[]): Promise<{ added_count: number }> {
     return firstValueFrom(this.http.post<{ added_count: number }>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}/add-segment`, { filters }));
   }
