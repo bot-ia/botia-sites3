@@ -5,7 +5,7 @@ import { DataService } from '../../services/data.service';
 import { LanguageService } from '../../services/language.service';
 import { ToastService } from '../../services/toast.service';
 import { AuthService } from '../../services/auth.service';
-import { WATemplate, NotificationConfig, Campaign, NotificationQueueItem, WATemplateDetail, NotificationType, PaymentStatus, ConfirmationStatus, TemplateParameter, Contact, CampaignContact, CampaignStatus, ExecuteCampaignResponse } from '../../models';
+import { WATemplate, NotificationConfig, Campaign, NotificationQueueItem, WATemplateDetail, NotificationType, PaymentStatus, ConfirmationStatus, TemplateParameter, Contact, CampaignContact, CampaignStatus, ExecuteCampaignResponse, FilterableField, FilterCondition, Operator, SavedSegment } from '../../models';
 
 type NotificationSubView = 'templates' | 'configs' | 'campaigns' | 'queue';
 
@@ -62,8 +62,22 @@ export class NotificationsComponent {
   isExecuting = signal(false);
   
   // Add Contacts Modal State
+  addContactsModalTab = signal<'manual' | 'segmentation'>('manual');
   contactSearchTerm = signal('');
   selectedContactIds = signal<Set<string>>(new Set());
+  
+  // Segmentation State
+  filterableFields = signal<FilterableField[]>([]);
+  segmentFilters = signal<FilterCondition[]>([]);
+  segmentPreview = signal<{ count: number; preview: Contact[] } | null>(null);
+  isSegmentLoading = signal(false);
+  isAddingSegment = signal(false);
+  savedSegments = signal<SavedSegment[]>([]);
+  loadedSegment = signal<SavedSegment | null>(null);
+  segmentToDelete = signal<SavedSegment | null>(null);
+  isSavingSegment = signal(false);
+  newSegmentName = signal('');
+
 
   // Delete Campaign State
   campaignToDelete = signal<Campaign | null>(null);
@@ -118,6 +132,13 @@ export class NotificationsComponent {
   constructor() {
     effect(() => {
       this.loadAllData(this.botId());
+    }, { allowSignalWrites: true });
+
+    effect(() => {
+      const filters = this.segmentFilters();
+      if (!this.loadedSegment() || JSON.stringify(this.loadedSegment()?.filters) !== JSON.stringify(filters)) {
+         this.loadedSegment.set(null); // Unset if filters change manually
+      }
     }, { allowSignalWrites: true });
   }
 
@@ -338,11 +359,33 @@ export class NotificationsComponent {
   }
 
   async openAddContactsModal() {
+    this.addContactsModalTab.set('manual');
     this.contactSearchTerm.set('');
     this.selectedContactIds.set(new Set());
-    this.allBotContacts.set(await this.dataService.getContacts(this.botId()));
+    // Segmentation state reset
+    this.clearSegmentFilters();
+    this.filterableFields.set([]);
+    this.savedSegments.set([]);
+    this.segmentPreview.set(null);
+    this.isSavingSegment.set(false);
+    this.newSegmentName.set('');
+
     this.modalContent.set('addContacts');
     this.isModalOpen.set(true);
+    
+    // Asynchronously load data for both tabs
+    const [contacts, fields, segments] = await Promise.all([
+      this.dataService.getContacts(this.botId()),
+      this.dataService.getFilterableFields(this.botId()),
+      this.dataService.getSavedSegments(this.botId())
+    ]);
+    this.allBotContacts.set(contacts);
+    this.filterableFields.set(fields);
+    this.savedSegments.set(segments);
+  }
+
+  changeAddContactsTab(tab: 'manual' | 'segmentation') {
+    this.addContactsModalTab.set(tab);
   }
 
   toggleContactSelection(contactId: string) {
@@ -487,6 +530,146 @@ export class NotificationsComponent {
     } finally {
       this.cancelDeleteCampaign();
     }
+  }
+
+  // --- SEGMENTATION ---
+  addSegmentFilter() {
+    this.segmentFilters.update(filters => [...filters, { id: Date.now(), fieldKey: null, operator: null, value: '' }]);
+  }
+  removeSegmentFilter(id: number) {
+    this.segmentFilters.update(filters => filters.filter(f => f.id !== id));
+  }
+  clearSegmentFilters() {
+    this.segmentFilters.set([]);
+    this.loadedSegment.set(null);
+    this.segmentPreview.set(null);
+  }
+
+  updateFilterField(id: number, fieldKey: string) {
+    this.segmentFilters.update(filters => filters.map(f => f.id === id ? { ...f, fieldKey, operator: null, value: '' } : f));
+  }
+  updateFilterOperator(id: number, operator: Operator) {
+    this.segmentFilters.update(filters => filters.map(f => f.id === id ? { ...f, operator } : f));
+  }
+
+  async runSegmentPreview() {
+    const filters = this.segmentFilters();
+    const validFilters = filters.filter(f => f.fieldKey && f.operator && (f.value !== null && f.value !== '' || ['is_empty', 'is_not_empty'].includes(f.operator)));
+    if (validFilters.length > 0) {
+      this.isSegmentLoading.set(true);
+      try {
+        const result = await this.dataService.previewSegment(this.botId(), validFilters);
+        this.segmentPreview.set(result);
+      } catch (e) {
+        this.toastService.showError('Error fetching segment preview.');
+      } finally {
+        this.isSegmentLoading.set(false);
+      }
+    } else {
+      this.segmentPreview.set(null);
+    }
+  }
+
+  async addSegmentToCampaign() {
+    const campaign = this.selectedCampaign();
+    const validFilters = this.segmentFilters().filter(f => f.fieldKey && f.operator && (f.value !== null && f.value !== '' || ['is_empty', 'is_not_empty'].includes(f.operator)));
+    
+    if (!campaign || validFilters.length === 0) return;
+
+    this.isAddingSegment.set(true);
+    try {
+        const result = await this.dataService.addSegmentToCampaign(this.botId(), campaign.id, validFilters);
+        this.toastService.showSuccess(this.languageService.T('addSegmentContactsSuccess').replace('{count}', String(result.added_count)));
+        this.closeModal();
+        this.selectCampaign(campaign); // Refresh details
+    } catch (e) {
+        this.toastService.showError(this.languageService.T('addSegmentContactsError'));
+    } finally {
+        this.isAddingSegment.set(false);
+    }
+  }
+
+  loadSegment(event: Event) {
+    const segmentId = (event.target as HTMLSelectElement).value;
+    if (!segmentId) {
+      this.clearSegmentFilters();
+      return;
+    }
+    const segment = this.savedSegments().find(s => s.segment_id === segmentId);
+    if (segment) {
+      this.segmentFilters.set(segment.filters.map((f, i) => ({...f, id: Date.now() + i }))); // create new IDs for UI
+      this.loadedSegment.set(segment);
+      this.segmentPreview.set(null); // Clear preview until user re-runs
+    }
+  }
+  
+  // New Save Flow
+  startSaveSegment() {
+    const validFilters = this.segmentFilters().filter(f => f.fieldKey && f.operator);
+    if (validFilters.length === 0) return;
+    this.isSavingSegment.set(true);
+    this.newSegmentName.set(this.loadedSegment()?.name || '');
+  }
+
+  cancelSaveSegment() {
+    this.isSavingSegment.set(false);
+  }
+
+  async confirmSaveSegment() {
+    const name = this.newSegmentName().trim();
+    const validFilters = this.segmentFilters().filter(f => f.fieldKey && f.operator);
+    
+    if (!name) return;
+    if (validFilters.length === 0) return;
+
+    try {
+      const newSegment = await this.dataService.saveSegment(this.botId(), { name, filters: validFilters });
+      this.savedSegments.update(segments => {
+        // Replace if exists, else add
+        const existingIndex = segments.findIndex(s => s.segment_id === newSegment.segment_id);
+        if (existingIndex > -1) {
+          segments[existingIndex] = newSegment;
+          return [...segments];
+        }
+        return [...segments, newSegment];
+      });
+      this.loadedSegment.set(newSegment);
+      this.isSavingSegment.set(false);
+      this.toastService.showSuccess(this.languageService.T('segmentSaveSuccess'));
+    } catch(e) {
+      this.toastService.showError(this.languageService.T('segmentSaveError'));
+    }
+  }
+  
+  requestDeleteSegment() {
+      const segment = this.loadedSegment();
+      if (segment) {
+          this.segmentToDelete.set(segment);
+      }
+  }
+
+  cancelDeleteSegment() {
+      this.segmentToDelete.set(null);
+  }
+
+  async confirmDeleteSegment() {
+    const segment = this.segmentToDelete();
+    if (!segment) return;
+
+    try {
+      await this.dataService.deleteSegment(this.botId(), segment.segment_id);
+      this.savedSegments.update(segments => segments.filter(s => s.segment_id !== segment.segment_id));
+      this.clearSegmentFilters();
+      this.toastService.showSuccess(this.languageService.T('segmentDeleteSuccess'));
+    } catch(e) {
+      this.toastService.showError(this.languageService.T('segmentDeleteError'));
+    } finally {
+      this.cancelDeleteSegment();
+    }
+  }
+
+  getFieldForFilter(filter: FilterCondition): FilterableField | undefined {
+    return this.filterableFields().find(f => f.key === filter.fieldKey);
   }
 
   // --- GENERAL ---

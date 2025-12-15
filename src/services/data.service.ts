@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse } from '../models';
+import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment } from '../models';
 import { ApiService } from './api.service';
 
 @Injectable({
@@ -228,7 +228,7 @@ export class DataService {
     return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${appt.bot_id}/patient_appointments/${appt.appointment_id}`));
   }
 
-  // CONTACTS
+  // CONTACTS & SEGMENTATION
   async getContacts(botId: string): Promise<Contact[]> { return this.get<Contact[]>(`${this.apiService.baseUrl}/bots/${botId}/contacts`, []); }
   async saveContact(contact: Partial<Contact>): Promise<Contact> {
     const request = contact.contact_id
@@ -248,6 +248,22 @@ export class DataService {
   async syncWithChatwood(botId: string): Promise<{ message: string }> {
     return firstValueFrom(this.http.post<{ message: string }>(`${this.apiService.baseUrl}/bots/${botId}/contacts/sync_chatwood`, {}));
   }
+  async getFilterableFields(botId: string): Promise<FilterableField[]> {
+    return this.get<FilterableField[]>(`${this.apiService.baseUrl}/bots/${botId}/contacts/filterable-fields`, []);
+  }
+  async previewSegment(botId: string, filters: Partial<FilterCondition>[]): Promise<SegmentationPreviewResult> {
+    return firstValueFrom(this.http.post<SegmentationPreviewResult>(`${this.apiService.baseUrl}/bots/${botId}/contacts/segment-preview`, { filters }));
+  }
+  async getSavedSegments(botId: string): Promise<SavedSegment[]> {
+    return this.get<SavedSegment[]>(`${this.apiService.baseUrl}/bots/${botId}/segments`, []);
+  }
+  async saveSegment(botId: string, segment: { name: string, filters: Partial<FilterCondition>[] }): Promise<SavedSegment> {
+    return firstValueFrom(this.http.post<SavedSegment>(`${this.apiService.baseUrl}/bots/${botId}/segments`, segment));
+  }
+  async deleteSegment(botId: string, segmentId: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${botId}/segments/${segmentId}`));
+  }
+
 
   // NOTIFICATIONS MODULE
   async getWaTemplates(botId: string): Promise<WATemplate[]> {
@@ -312,6 +328,10 @@ export class DataService {
 
   async addContactsToCampaign(botId: string, campaignId: number, contacts: { phone_number: string, params: any }[]): Promise<any> {
     return firstValueFrom(this.http.post<any>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}/contacts`, { contacts }));
+  }
+
+  async addSegmentToCampaign(botId: string, campaignId: number, filters: Partial<FilterCondition>[]): Promise<{ added_count: number }> {
+    return firstValueFrom(this.http.post<{ added_count: number }>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}/add-segment`, { filters }));
   }
 
   async executeCampaign(botId: string, campaignId: number): Promise<ExecuteCampaignResponse> {

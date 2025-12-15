@@ -252,6 +252,50 @@ export interface Contact {
   updated_at: string;
 }
 
+// === SEGMENTATION ===
+export type Operator =
+  | 'is'
+  | 'is_not'
+  | 'contains'
+  | 'does_not_contain'
+  | 'starts_with'
+  | 'ends_with'
+  | 'is_empty'
+  | 'is_not_empty'
+  | 'equals'
+  | 'greater_than'
+  | 'less_than'
+  | 'between'
+  | 'is_one_of';
+
+export interface FilterableField {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'enum' | 'date';
+  operators: Operator[];
+  options?: string[];
+}
+
+export interface FilterCondition {
+  id: number; // for unique tracking in UI
+  fieldKey: string | null;
+  operator: Operator | null;
+  value: any;
+  value2?: any; // for 'between' operator
+}
+
+export interface SegmentationPreviewResult {
+    count: number;
+    preview: Contact[];
+}
+
+export interface SavedSegment {
+  segment_id: string;
+  bot_id: string;
+  name: string;
+  filters: FilterCondition[];
+}
+
 // === NOTIFICATIONS & CAMPAIGNS MODULE ===
 export interface WATemplate {
   id: number;
