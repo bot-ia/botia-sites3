@@ -158,8 +158,23 @@ export class NotificationsComponent {
     this.isLoading.set(false);
   }
 
-  changeSubView(view: NotificationSubView) {
+  async changeSubView(view: NotificationSubView) {
     this.activeSubView.set(view);
+    if (view === 'queue') {
+      await this.refreshQueue();
+    }
+  }
+  
+  async refreshQueue() {
+    this.isCampaignLoading.set(true); // Re-use loading signal for visual feedback
+    try {
+      this.queueItems.set(await this.dataService.getNotificationQueue(this.botId()));
+      this.toastService.showSuccess(this.languageService.T('queueRefreshed'));
+    } catch(e) {
+      this.toastService.showError(this.languageService.T('queueRefreshError'));
+    } finally {
+      this.isCampaignLoading.set(false);
+    }
   }
 
   async syncTemplates() {
