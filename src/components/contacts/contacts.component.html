@@ -92,10 +92,16 @@
               @if(contactValidationErrors().phone_number) { <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().phone_number }}</p> }
             </div>
           </div>
-          <div>
-            <label class="block mb-2 font-semibold">{{ languageService.T('email') }}</label>
-            <input type="email" [(ngModel)]="contact.email" name="email" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded-md border" [class.border-red-500]="contactValidationErrors().email" [class.border-slate-300]="!contactValidationErrors().email" [class.dark:border-slate-600]="!contactValidationErrors().email">
-            @if(contactValidationErrors().email) { <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().email }}</p> }
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block mb-2 font-semibold">{{ languageService.T('email') }}</label>
+              <input type="email" [(ngModel)]="contact.email" name="email" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded-md border" [class.border-red-500]="contactValidationErrors().email" [class.border-slate-300]="!contactValidationErrors().email" [class.dark:border-slate-600]="!contactValidationErrors().email">
+              @if(contactValidationErrors().email) { <p class="text-red-500 dark:text-red-400 text-sm mt-1">{{ contactValidationErrors().email }}</p> }
+            </div>
+            <div>
+              <label class="block mb-2 font-semibold">{{ languageService.T('contactBirthDate') }}</label>
+              <input type="date" [(ngModel)]="contact.birth_date" name="birth_date" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white p-2 rounded-md border border-slate-300 dark:border-slate-600">
+            </div>
           </div>
         </div>
 

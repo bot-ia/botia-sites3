@@ -62,7 +62,7 @@
                       <td class="p-3 text-slate-600 dark:text-slate-300">{{ template.language }}</td>
                       <td class="p-3"><span class="px-2 py-1 text-xs rounded-full" [class.bg-green-100]="template.status === 'APPROVED'" [class.text-green-800]="template.status === 'APPROVED'" [class.dark:bg-green-900/50]="template.status === 'APPROVED'" [class.dark:text-green-300]="template.status === 'APPROVED'" [class.bg-yellow-100]="template.status !== 'APPROVED'" [class.text-yellow-800]="template.status !== 'APPROVED'" [class.dark:bg-yellow-900/50]="template.status !== 'APPROVED'" [class.dark:text-yellow-300]="template.status !== 'APPROVED'">{{ template.status }}</span></td>
                       <td class="p-3 text-right">
-                        <button (click)="openTemplateParamsModal(template)" class="text-blue-500 hover:text-blue-400 text-sm">{{ languageService.T('editParameters') }}</button>
+                        <button (click)="openTemplateParamsModal(template)" class="text-blue-500 hover:text-blue-400 text-sm">{{ languageService.T('details') }}</button>
                       </td>
                     </tr>
                   } @empty {
@@ -89,6 +89,7 @@
                   <table class="w-full text-left">
                     <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
                       <tr>
+                        <th class="p-3 font-semibold">{{ languageService.T('health') }}</th>
                         <th class="p-3 font-semibold">{{ languageService.T('notificationType') }}</th>
                         <th class="p-3 font-semibold">{{ languageService.T('template') }}</th>
                         <th class="p-3 font-semibold">{{ languageService.T('interval') }}</th>
@@ -100,9 +101,19 @@
                     <tbody>
                       @for(config of configs(); track config.id) {
                         <tr class="border-t border-slate-200 dark:border-slate-700">
+                          <td class="p-3">
+                            <span class="h-3 w-3 rounded-full inline-block" 
+                              [class.bg-green-500]="config.health_status === 'ok'"
+                              [class.bg-yellow-500]="config.health_status === 'warning'"
+                              [class.bg-red-500]="config.health_status === 'error'"
+                              [class.bg-slate-400]="!config.health_status">
+                            </span>
+                          </td>
                           <td class="p-3 font-medium text-slate-800 dark:text-white">{{ languageService.T('notificationType_' + config.notification_type) }}</td>
                           <td class="p-3 text-slate-600 dark:text-slate-300">{{ getTemplateName(config.template_id) }}</td>
-                          <td class="p-3 text-slate-600 dark:text-slate-300">{{ formatOffset(config.offset_minutes) }}</td>
+                          <td class="p-3 text-slate-600 dark:text-slate-300">
+                            {{ isIntervalBased(config.notification_type) ? formatOffset(config.offset_minutes) : 'N/A' }}
+                          </td>
                           <td class="p-3 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate" [title]="formatFilters(config)">{{ formatFilters(config) || 'N/A' }}</td>
                           <td class="p-3">
                             <label class="relative inline-flex items-center cursor-pointer">
@@ -110,13 +121,15 @@
                               <div class="w-11 h-6 bg-slate-200 dark:bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                             </label>
                           </td>
-                          <td class="p-3 text-right">
-                            <button (click)="openConfigModal(config)" class="text-blue-500 hover:text-blue-400 text-sm mr-4">{{ languageService.T('edit') }}</button>
-                            <button (click)="requestDeleteConfig(config)" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button>
+                          <td class="p-3 text-right text-sm font-medium whitespace-nowrap">
+                            <button (click)="openHistoryModal(config)" class="text-gray-500 hover:text-gray-400 mr-4">{{ languageService.T('history') }}</button>
+                            <button (click)="openTestModal(config)" class="text-teal-500 hover:text-teal-400 mr-4">{{ languageService.T('test') }}</button>
+                            <button (click)="openConfigModal(config)" class="text-blue-500 hover:text-blue-400 mr-4">{{ languageService.T('edit') }}</button>
+                            <button (click)="requestDeleteConfig(config)" class="text-red-500 hover:text-red-400">{{ languageService.T('delete') }}</button>
                           </td>
                         </tr>
                       } @empty {
-                        <tr><td colspan="6" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noAutomationsFound') }}</td></tr>
+                        <tr><td colspan="7" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noAutomationsFound') }}</td></tr>
                       }
                     </tbody>
                   </table>
@@ -401,41 +414,45 @@
                   }
                 </select>
               </div>
-              <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4">
-                <legend class="px-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('whenToSend') }}</legend>
-                <div class="flex items-center gap-4 text-slate-800 dark:text-white">
-                  <span class="font-medium">{{ languageService.T('send') }}</span>
-                  <input type="number" [(ngModel)]="offsetValue" name="offset_value" class="w-24 bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required min="1">
-                  <select [(ngModel)]="offsetUnit" name="offset_unit" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
-                    <option value="minutes">{{ languageService.T('minutes') }}</option>
-                    <option value="hours">{{ languageService.T('hours') }}</option>
-                    <option value="days">{{ languageService.T('days') }}</option>
-                  </select>
-                  <select [(ngModel)]="offsetTimeframe" name="offset_timeframe" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
-                    <option value="before">{{ languageService.T('beforeEvent') }}</option>
-                    <option value="after">{{ languageService.T('afterEvent') }}</option>
-                  </select>
+              @if (isIntervalBased(config.notification_type)) {
+                <div class="animate-fade-in-fast space-y-6">
+                  <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4">
+                    <legend class="px-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('whenToSend') }}</legend>
+                    <div class="flex items-center gap-4 text-slate-800 dark:text-white">
+                      <span class="font-medium">{{ languageService.T('send') }}</span>
+                      <input type="number" [(ngModel)]="offsetValue" name="offset_value" class="w-24 bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required min="1">
+                      <select [(ngModel)]="offsetUnit" name="offset_unit" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                        <option value="minutes">{{ languageService.T('minutes') }}</option>
+                        <option value="hours">{{ languageService.T('hours') }}</option>
+                        <option value="days">{{ languageService.T('days') }}</option>
+                      </select>
+                      <select [(ngModel)]="offsetTimeframe" name="offset_timeframe" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                        <option value="before">{{ languageService.T('beforeEvent') }}</option>
+                        <option value="after">{{ languageService.T('afterEvent') }}</option>
+                      </select>
+                    </div>
+                  </fieldset>
+                  <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4">
+                    <legend class="px-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('optionalFilters') }}</legend>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block mb-2 font-semibold text-slate-500 dark:text-slate-400 text-sm">{{ languageService.T('applyIfPaymentStatus') }}</label>
+                        <select [(ngModel)]="config.apply_if_payment_status" name="payment_status" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                          <option [ngValue]="undefined">{{ languageService.T('anyStatus') }}</option>
+                          @for(s of paymentStatuses; track s){<option [value]="s">{{ languageService.T('paymentStatus_' + s) }}</option>}
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block mb-2 font-semibold text-slate-500 dark:text-slate-400 text-sm">{{ languageService.T('applyIfConfirmationStatus') }}</label>
+                        <select [(ngModel)]="config.apply_if_confirmation_status" name="confirmation_status" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                          <option [ngValue]="undefined">{{ languageService.T('anyStatus') }}</option>
+                          @for(s of confirmationStatuses; track s){<option [value]="s">{{ languageService.T('confirmationStatus_' + s) }}</option>}
+                        </select>
+                      </div>
+                  </div>
+                  </fieldset>
                 </div>
-              </fieldset>
-              <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4">
-                <legend class="px-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('optionalFilters') }}</legend>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block mb-2 font-semibold text-slate-500 dark:text-slate-400 text-sm">{{ languageService.T('applyIfPaymentStatus') }}</label>
-                    <select [(ngModel)]="config.apply_if_payment_status" name="payment_status" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
-                      <option [ngValue]="undefined">{{ languageService.T('anyStatus') }}</option>
-                      @for(s of paymentStatuses; track s){<option [value]="s">{{ languageService.T('paymentStatus_' + s) }}</option>}
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block mb-2 font-semibold text-slate-500 dark:text-slate-400 text-sm">{{ languageService.T('applyIfConfirmationStatus') }}</label>
-                    <select [(ngModel)]="config.apply_if_confirmation_status" name="confirmation_status" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
-                      <option [ngValue]="undefined">{{ languageService.T('anyStatus') }}</option>
-                      @for(s of confirmationStatuses; track s){<option [value]="s">{{ languageService.T('confirmationStatus_' + s) }}</option>}
-                    </select>
-                  </div>
-              </div>
-              </fieldset>
+              }
               <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                 <input type="checkbox" id="is_active" name="is_active" [(ngModel)]="config.is_active" class="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-slate-600 dark:border-slate-500">
                 <label for="is_active" class="ml-3 text-slate-800 dark:text-white">{{ languageService.T('activateImmediately') }}</label>
@@ -626,6 +643,76 @@
             }
           </div>
         </div>
+      }
+      @case('history') {
+        @if(historyForConfig(); as config) {
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-4xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+          <h2 class="text-2xl font-bold mb-4 text-slate-900 dark:text-white">{{ languageService.T('automationHistory') }}</h2>
+          <div class="flex-grow overflow-y-auto">
+            @if(isHistoryLoading()) {
+              <p class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('loading') }}</p>
+            } @else {
+              @if(historyItems().length > 0) {
+                <table class="w-full text-left">
+                  <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                    <tr>
+                      <th class="p-3 font-semibold">{{ languageService.T('sentTo') }}</th>
+                      <th class="p-3 font-semibold">{{ languageService.T('status') }}</th>
+                      <th class="p-3 font-semibold">{{ languageService.T('sentAt') }}</th>
+                      <th class="p-3 font-semibold">{{ languageService.T('errorMessage') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for(item of historyItems(); track item.history_id) {
+                      <tr class="border-t border-slate-200 dark:border-slate-700">
+                        <td class="p-3 font-mono text-sm text-slate-600 dark:text-slate-300">{{ item.contact_phone }}</td>
+                        <td class="p-3">
+                           <span class="px-2 py-1 text-xs rounded-full" [class]="getQueueStatusColor(item.status)">{{ item.status }}</span>
+                        </td>
+                        <td class="p-3 text-sm text-slate-500 dark:text-slate-400">{{ formatDate(item.sent_at) }}</td>
+                        <td class="p-3 text-sm text-red-500 dark:text-red-400 max-w-xs truncate" [title]="item.error_message">{{ item.error_message || 'N/A' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <p class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('noHistoryFound') }}</p>
+              }
+            }
+          </div>
+          <div class="flex justify-end mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('close') }}</button>
+          </div>
+        </div>
+        }
+      }
+       @case('test') {
+        @if(configToTest(); as config) {
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-lg border border-slate-200 dark:border-slate-700">
+          <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T('testAutomationRule') }}</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('selectContactToTest') }}</label>
+              <select [(ngModel)]="selectedTestContactId" name="testContact" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                <option [ngValue]="null" disabled>{{ languageService.T('selectContact') }}</option>
+                @for(c of allBotContacts(); track c.contact_id) {
+                  <option [value]="c.contact_id">{{c.name}} ({{c.phone_number}})</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+            <button type="button" (click)="sendTestNotification()" [disabled]="isTesting() || !selectedTestContactId()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-500 w-32 text-center">
+              @if(isTesting()) {
+                <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              } @else {
+                <span>{{ languageService.T('sendTest') }}</span>
+              }
+            </button>
+          </div>
+        </div>
+        }
       }
     }
   </div>

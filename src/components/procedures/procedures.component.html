@@ -120,6 +120,11 @@
                 </div>
              </fieldset>
 
+              <div>
+                <label class="block font-semibold mb-2">{{ languageService.T('procedureRecurrence') }}</label>
+                <input type="number" name="recurrence_days" [(ngModel)]="item.recurrence_days" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-2 border border-slate-300 dark:border-slate-600" [placeholder]="languageService.T('procedureRecurrencePlaceholder')">
+              </div>
+
              <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4 flex-grow flex flex-col">
                 <legend class="px-2 font-semibold">{{ languageService.T('mediaLinks') }}</legend>
                 <div class="space-y-3 overflow-y-auto">

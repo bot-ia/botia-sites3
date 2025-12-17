@@ -342,7 +342,7 @@
         <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
             <h3 class="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-4 col-span-full">Integraciones</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                <div>
+                <div class="md:col-span-2">
                   <label for="meta_token" class="block font-semibold mb-2">{{ languageService.T('metaTokenLabel') }}</label>
                   <input type="password" id="meta_token" name="meta_token" #meta_token="ngModel" [(ngModel)]="bot.meta_token" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono" required>
                 </div>
@@ -355,7 +355,11 @@
                       </svg>
                     </span>
                   </label>
-                  <input type="text" id="waba_id" name="waba_id" #waba_id="ngModel" [(ngModel)]="bot.waba_id" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono" required>
+                  <input type="text" id="waba_id" name="waba_id" #waba_id="ngModel" [(ngModel)]="bot.waba_id" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono">
+                </div>
+                <div>
+                  <label for="phone_number_id" class="block font-semibold mb-2">{{ languageService.T('metaPhoneNumberId') }}</label>
+                  <input type="text" id="phone_number_id" name="phone_number_id" [(ngModel)]="bot.phone_number_id" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 font-mono">
                 </div>
                 <div>
                   <label for="key_chatwood" class="block font-semibold mb-2">{{ languageService.T('keyChatwoodLabel') }}</label>

@@ -92,7 +92,12 @@ export class ContactsComponent {
   openModal(contact: Contact | null = null) {
     this.contactValidationErrors.set({});
     if (contact) {
-      this.editingContact.set({ ...contact });
+      const contactCopy = { ...contact };
+      // Ensure birth_date is in 'yyyy-MM-dd' format for the input
+      if (contactCopy.birth_date) {
+          contactCopy.birth_date = new Date(contactCopy.birth_date).toISOString().split('T')[0];
+      }
+      this.editingContact.set(contactCopy);
     } else {
       // Pre-initialize attributes object for new contacts
       const initialAttributes: Record<string, any> = {};
@@ -100,7 +105,7 @@ export class ContactsComponent {
         initialAttributes[attr.key] = '';
       });
       this.editingContact.set({
-        bot_id: this.botId(), name: '', phone_number: '', email: '', attributes: initialAttributes
+        bot_id: this.botId(), name: '', phone_number: '', email: '', birth_date: null, attributes: initialAttributes
       });
     }
     this.isModalOpen.set(true);

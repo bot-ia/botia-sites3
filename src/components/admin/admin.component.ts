@@ -180,6 +180,7 @@ export class AdminComponent {
           key_qdrant: '', 
           meta_token: '', 
           waba_id: '',
+          phone_number_id: '',
           key_chatwood: '',
           account_id_chatwood: null,
           url_espo: '',

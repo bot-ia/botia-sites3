@@ -5,7 +5,7 @@ import { DataService } from '../../services/data.service';
 import { LanguageService } from '../../services/language.service';
 import { ToastService } from '../../services/toast.service';
 import { AuthService } from '../../services/auth.service';
-import { WATemplate, NotificationConfig, Campaign, NotificationQueueItem, WATemplateDetail, NotificationType, PaymentStatus, ConfirmationStatus, TemplateParameter, Contact, CampaignContact, CampaignStatus, ExecuteCampaignResponse, FilterableField, FilterCondition, Operator, SavedSegment } from '../../models';
+import { WATemplate, NotificationConfig, Campaign, NotificationQueueItem, WATemplateDetail, NotificationType, PaymentStatus, ConfirmationStatus, TemplateParameter, Contact, CampaignContact, CampaignStatus, ExecuteCampaignResponse, FilterableField, FilterCondition, Operator, SavedSegment, NotificationHistory } from '../../models';
 
 type NotificationSubView = 'templates' | 'configs' | 'campaigns' | 'queue';
 
@@ -33,7 +33,7 @@ export class NotificationsComponent {
   // Component State
   isLoading = signal(true);
   isSyncing = signal(false);
-  activeSubView = signal<NotificationSubView>('campaigns');
+  activeSubView = signal<NotificationSubView>('configs');
   
   // Data Signals
   templates = signal<WATemplate[]>([]);
@@ -44,7 +44,7 @@ export class NotificationsComponent {
 
   // Modal State
   isModalOpen = signal(false);
-  modalContent = signal<'templateParams' | 'notificationConfig' | 'newCampaign' | 'addContacts' | 'renameCampaign' | null>(null);
+  modalContent = signal<'templateParams' | 'notificationConfig' | 'newCampaign' | 'addContacts' | 'renameCampaign' | 'history' | 'test' | null>(null);
 
   editingTemplate = signal<WATemplateDetail | null>(null);
   editingConfig = signal<Partial<NotificationConfig> | null>(null);
@@ -55,6 +55,16 @@ export class NotificationsComponent {
   offsetValue = signal(24);
   offsetUnit = signal<'minutes' | 'hours' | 'days'>('hours');
   offsetTimeframe = signal<'before' | 'after'>('before');
+
+  // History Modal State
+  historyForConfig = signal<NotificationConfig | null>(null);
+  historyItems = signal<NotificationHistory[]>([]);
+  isHistoryLoading = signal(false);
+
+  // Test Modal State
+  configToTest = signal<NotificationConfig | null>(null);
+  selectedTestContactId = signal<string | null>(null);
+  isTesting = signal(false);
 
   // Campaign Detail View State
   selectedCampaign = signal<CampaignDetails | null>(null);
@@ -125,7 +135,14 @@ export class NotificationsComponent {
     );
   });
 
-  readonly notificationTypes: NotificationType[] = ['appointment_reminder', 'payment_reminder', 'pre_procedure_instructions', 'post_procedure_followup'];
+  readonly notificationTypes: NotificationType[] = [
+    'appointment_reminder', 
+    'payment_reminder', 
+    'pre_procedure_instructions', 
+    'post_procedure_followup',
+    'birthday_greeting',
+    'reactivation_campaign'
+  ];
   readonly paymentStatuses: PaymentStatus[] = ['pendiente', 'pagado'];
   readonly confirmationStatuses: ConfirmationStatus[] = ['agendada', 'confirmada', 'realizada', 'cancelada'];
   readonly contactFields: (keyof Contact)[] = ['name', 'phone_number', 'email'];
@@ -220,18 +237,20 @@ export class NotificationsComponent {
     if (config) { // Editing
       this.editingConfig.set({ ...config });
       
-      let minutes = Math.abs(config.offset_minutes);
-      if (minutes % (60 * 24) === 0 && minutes > 0) {
-        this.offsetValue.set(minutes / (60 * 24));
-        this.offsetUnit.set('days');
-      } else if (minutes % 60 === 0 && minutes > 0) {
-        this.offsetValue.set(minutes / 60);
-        this.offsetUnit.set('hours');
-      } else {
-        this.offsetValue.set(minutes);
-        this.offsetUnit.set('minutes');
+      if (this.isIntervalBased(config.notification_type)) {
+        let minutes = Math.abs(config.offset_minutes);
+        if (minutes % (60 * 24) === 0 && minutes > 0) {
+          this.offsetValue.set(minutes / (60 * 24));
+          this.offsetUnit.set('days');
+        } else if (minutes % 60 === 0 && minutes > 0) {
+          this.offsetValue.set(minutes / 60);
+          this.offsetUnit.set('hours');
+        } else {
+          this.offsetValue.set(minutes);
+          this.offsetUnit.set('minutes');
+        }
+        this.offsetTimeframe.set(config.offset_minutes < 0 ? 'before' : 'after');
       }
-      this.offsetTimeframe.set(config.offset_minutes < 0 ? 'before' : 'after');
       
     } else { // Creating
       const firstTemplateId = this.approvedTemplates()[0]?.id;
@@ -255,14 +274,19 @@ export class NotificationsComponent {
   async saveConfig() {
     const config = this.editingConfig();
     if (!config || !config.template_id) return;
-
-    // Calculate offset_minutes from UI
-    let multiplier = 1;
-    if (this.offsetUnit() === 'hours') multiplier = 60;
-    if (this.offsetUnit() === 'days') multiplier = 60 * 24;
     
-    const calculatedMinutes = this.offsetValue() * multiplier;
-    config.offset_minutes = this.offsetTimeframe() === 'before' ? -calculatedMinutes : calculatedMinutes;
+    if (this.isIntervalBased(config.notification_type)) {
+      let multiplier = 1;
+      if (this.offsetUnit() === 'hours') multiplier = 60;
+      if (this.offsetUnit() === 'days') multiplier = 60 * 24;
+      
+      const calculatedMinutes = this.offsetValue() * multiplier;
+      config.offset_minutes = this.offsetTimeframe() === 'before' ? -calculatedMinutes : calculatedMinutes;
+    } else {
+      config.offset_minutes = 0;
+      config.apply_if_payment_status = undefined;
+      config.apply_if_confirmation_status = undefined;
+    }
 
     try {
       await this.dataService.saveNotificationConfig(config);
@@ -315,6 +339,58 @@ export class NotificationsComponent {
       this.cancelDeleteConfig();
     }
   }
+
+  // --- HISTORY & TEST MODALS ---
+  isIntervalBased(type: NotificationType): boolean {
+    return !['birthday_greeting', 'reactivation_campaign'].includes(type);
+  }
+
+  async openHistoryModal(config: NotificationConfig) {
+    this.historyForConfig.set(config);
+    this.modalContent.set('history');
+    this.isModalOpen.set(true);
+    this.isHistoryLoading.set(true);
+    try {
+      const history = await this.dataService.getNotificationHistory(this.botId(), config.id);
+      this.historyItems.set(history);
+    } catch(e) {
+      this.toastService.showError('Failed to load history.');
+      this.historyItems.set([]);
+    } finally {
+      this.isHistoryLoading.set(false);
+    }
+  }
+
+  async openTestModal(config: NotificationConfig) {
+    this.configToTest.set(config);
+    this.selectedTestContactId.set(null);
+    this.modalContent.set('test');
+    this.isModalOpen.set(true);
+    if (this.allBotContacts().length === 0) {
+      this.allBotContacts.set(await this.dataService.getContacts(this.botId()));
+    }
+  }
+  
+  async sendTestNotification() {
+    const config = this.configToTest();
+    const contactId = this.selectedTestContactId();
+    if (!config || !contactId) {
+      this.toastService.showError(this.languageService.T('noContactSelected'));
+      return;
+    }
+    
+    this.isTesting.set(true);
+    try {
+      await this.dataService.testNotificationConfig(this.botId(), config.id, contactId);
+      this.toastService.showSuccess(this.languageService.T('testSuccessMessage'));
+      this.closeModal();
+    } catch(e) {
+      this.toastService.showError(this.languageService.T('testErrorMessage'));
+      console.error(e);
+    } finally {
+      this.isTesting.set(false);
+    }
+  }
   
   // --- CAMPAIGNS ---
 
@@ -337,7 +413,6 @@ export class NotificationsComponent {
       return;
     }
 
-    // Merge parameters from campaign into the template's parameter structure
     if (campaignDetails.parameters && campaignDetails.parameters.length > 0) {
       template.parameters = template.parameters.map(templateParam => {
         const campaignParam = (campaignDetails.parameters as any[]).find(p => p.template_param_id === templateParam.id);
@@ -371,7 +446,7 @@ export class NotificationsComponent {
       this.campaigns.set(await this.dataService.getCampaigns(this.botId()));
       this.toastService.showSuccess(this.languageService.T('saveSuccess'));
       this.closeModal();
-      this.selectCampaign(newCampaign); // Automatically go to edit view
+      this.selectCampaign(newCampaign);
     } catch (e) {
       this.toastService.showError(this.languageService.T('saveError'));
     }
@@ -381,7 +456,6 @@ export class NotificationsComponent {
     this.addContactsModalTab.set('manual');
     this.contactSearchTerm.set('');
     this.selectedContactIds.set(new Set());
-    // Segmentation state reset
     this.clearSegmentFilters();
     this.filterableFields.set([]);
     this.savedSegments.set([]);
@@ -392,7 +466,6 @@ export class NotificationsComponent {
     this.modalContent.set('addContacts');
     this.isModalOpen.set(true);
     
-    // Asynchronously load data for both tabs
     const [contacts, fields, segments] = await Promise.all([
       this.dataService.getContacts(this.botId()),
       this.dataService.getFilterableFields(this.botId()),
@@ -444,7 +517,7 @@ export class NotificationsComponent {
         await this.dataService.addContactsToCampaign(this.botId(), campaign.id, contactsToAdd);
         this.toastService.showSuccess('Contacts added successfully.');
         this.closeModal();
-        this.selectCampaign(campaign); // Refresh details
+        this.selectCampaign(campaign);
     } catch (e) {
         this.toastService.showError('Failed to add contacts.');
     }
@@ -473,8 +546,6 @@ export class NotificationsComponent {
   requestExecuteCampaign() {
     const campaign = this.selectedCampaign();
     if (!campaign) return;
-
-    // Frontend Validations
     if (campaign.status !== 'DRAFT' && campaign.status !== 'READY') {
       this.toastService.showError(this.languageService.T('validation_campaign_wrong_status'));
       return;
@@ -501,21 +572,17 @@ export class NotificationsComponent {
     if (!campaign) return;
 
     this.isExecuting.set(true);
-    this.campaignToExecute.set(null); // Close modal
+    this.campaignToExecute.set(null);
 
     try {
         const response = await this.dataService.executeCampaign(this.botId(), campaign.id);
-
         this.toastService.showSuccess(
           this.languageService.T('campaignExecutionSuccess').replace('{count}', String(response.total_contacts))
         );
         
-        // Update local state
         const newStatus = response.campaign_status;
         this.selectedCampaign.update(c => c ? { ...c, status: newStatus } : null);
         this.campaigns.update(cs => cs.map(c => c.id === campaign.id ? { ...c, status: newStatus } : c));
-
-        // Navigate and refresh queue
         this.activeSubView.set('queue');
         this.queueItems.set(await this.dataService.getNotificationQueue(this.botId()));
 
@@ -526,13 +593,8 @@ export class NotificationsComponent {
     }
   }
 
-  requestDeleteCampaign(campaign: Campaign) {
-    this.campaignToDelete.set(campaign);
-  }
-
-  cancelDeleteCampaign() {
-    this.campaignToDelete.set(null);
-  }
+  requestDeleteCampaign(campaign: Campaign) { this.campaignToDelete.set(campaign); }
+  cancelDeleteCampaign() { this.campaignToDelete.set(null); }
 
   async confirmDeleteCampaign() {
     const campaign = this.campaignToDelete();
@@ -551,19 +613,13 @@ export class NotificationsComponent {
     }
   }
   
-  requestRemoveContact(contact: CampaignContact) {
-    this.contactToRemove.set(contact);
-  }
-
-  cancelRemoveContact() {
-    this.contactToRemove.set(null);
-  }
+  requestRemoveContact(contact: CampaignContact) { this.contactToRemove.set(contact); }
+  cancelRemoveContact() { this.contactToRemove.set(null); }
 
   async confirmRemoveContact() {
     const contact = this.contactToRemove();
     const campaign = this.selectedCampaign();
     if (!contact || !campaign) return;
-
     try {
       await this.dataService.removeContactFromCampaign(this.botId(), campaign.id, contact.id);
       this.toastService.showSuccess(this.languageService.T('deleteSuccess'));
@@ -573,7 +629,6 @@ export class NotificationsComponent {
         const updatedContacts = c.contacts.filter(ct => ct.id !== contact.id);
         return { ...c, contacts: updatedContacts };
       });
-
       this.campaigns.update(cs => cs.map(c => 
           c.id === campaign.id ? { ...c, total_contacts: c.total_contacts - 1 } : c
       ));
@@ -586,24 +641,15 @@ export class NotificationsComponent {
   }
 
   // --- SEGMENTATION ---
-  addSegmentFilter() {
-    this.segmentFilters.update(filters => [...filters, { id: Date.now(), fieldKey: null, operator: null, value: '' }]);
-  }
-  removeSegmentFilter(id: number) {
-    this.segmentFilters.update(filters => filters.filter(f => f.id !== id));
-  }
+  addSegmentFilter() { this.segmentFilters.update(filters => [...filters, { id: Date.now(), fieldKey: null, operator: null, value: '' }]); }
+  removeSegmentFilter(id: number) { this.segmentFilters.update(filters => filters.filter(f => f.id !== id)); }
   clearSegmentFilters() {
     this.segmentFilters.set([]);
     this.loadedSegment.set(null);
     this.segmentPreview.set(null);
   }
-
-  updateFilterField(id: number, fieldKey: string) {
-    this.segmentFilters.update(filters => filters.map(f => f.id === id ? { ...f, fieldKey, operator: null, value: '' } : f));
-  }
-  updateFilterOperator(id: number, operator: Operator) {
-    this.segmentFilters.update(filters => filters.map(f => f.id === id ? { ...f, operator } : f));
-  }
+  updateFilterField(id: number, fieldKey: string) { this.segmentFilters.update(filters => filters.map(f => f.id === id ? { ...f, fieldKey, operator: null, value: '' } : f)); }
+  updateFilterOperator(id: number, operator: Operator) { this.segmentFilters.update(filters => filters.map(f => f.id === id ? { ...f, operator } : f)); }
 
   async runSegmentPreview() {
     const filters = this.segmentFilters();
@@ -626,15 +672,13 @@ export class NotificationsComponent {
   async addSegmentToCampaign() {
     const campaign = this.selectedCampaign();
     const validFilters = this.segmentFilters().filter(f => f.fieldKey && f.operator && (f.value !== null && f.value !== '' || ['is_empty', 'is_not_empty'].includes(f.operator)));
-    
     if (!campaign || validFilters.length === 0) return;
-
     this.isAddingSegment.set(true);
     try {
         const result = await this.dataService.addSegmentToCampaign(this.botId(), campaign.id, validFilters);
         this.toastService.showSuccess(this.languageService.T('addSegmentContactsSuccess').replace('{count}', String(result.added_count)));
         this.closeModal();
-        this.selectCampaign(campaign); // Refresh details
+        this.selectCampaign(campaign);
     } catch (e) {
         this.toastService.showError(this.languageService.T('addSegmentContactsError'));
     } finally {
@@ -644,19 +688,15 @@ export class NotificationsComponent {
 
   loadSegment(event: Event) {
     const segmentId = (event.target as HTMLSelectElement).value;
-    if (!segmentId) {
-      this.clearSegmentFilters();
-      return;
-    }
+    if (!segmentId) { this.clearSegmentFilters(); return; }
     const segment = this.savedSegments().find(s => s.segment_id === segmentId);
     if (segment) {
-      this.segmentFilters.set(segment.filters.map((f, i) => ({...f, id: Date.now() + i }))); // create new IDs for UI
+      this.segmentFilters.set(segment.filters.map((f, i) => ({...f, id: Date.now() + i })));
       this.loadedSegment.set(segment);
-      this.segmentPreview.set(null); // Clear preview until user re-runs
+      this.segmentPreview.set(null);
     }
   }
   
-  // New Save Flow
   startSaveSegment() {
     const validFilters = this.segmentFilters().filter(f => f.fieldKey && f.operator);
     if (validFilters.length === 0) return;
@@ -664,26 +704,17 @@ export class NotificationsComponent {
     this.newSegmentName.set(this.loadedSegment()?.name || '');
   }
 
-  cancelSaveSegment() {
-    this.isSavingSegment.set(false);
-  }
+  cancelSaveSegment() { this.isSavingSegment.set(false); }
 
   async confirmSaveSegment() {
     const name = this.newSegmentName().trim();
     const validFilters = this.segmentFilters().filter(f => f.fieldKey && f.operator);
-    
-    if (!name) return;
-    if (validFilters.length === 0) return;
-
+    if (!name || validFilters.length === 0) return;
     try {
       const newSegment = await this.dataService.saveSegment(this.botId(), { name, filters: validFilters });
       this.savedSegments.update(segments => {
-        // Replace if exists, else add
         const existingIndex = segments.findIndex(s => s.segment_id === newSegment.segment_id);
-        if (existingIndex > -1) {
-          segments[existingIndex] = newSegment;
-          return [...segments];
-        }
+        if (existingIndex > -1) { segments[existingIndex] = newSegment; return [...segments]; }
         return [...segments, newSegment];
       });
       this.loadedSegment.set(newSegment);
@@ -696,19 +727,12 @@ export class NotificationsComponent {
   
   requestDeleteSegment() {
       const segment = this.loadedSegment();
-      if (segment) {
-          this.segmentToDelete.set(segment);
-      }
+      if (segment) { this.segmentToDelete.set(segment); }
   }
-
-  cancelDeleteSegment() {
-      this.segmentToDelete.set(null);
-  }
-
+  cancelDeleteSegment() { this.segmentToDelete.set(null); }
   async confirmDeleteSegment() {
     const segment = this.segmentToDelete();
     if (!segment) return;
-
     try {
       await this.dataService.deleteSegment(this.botId(), segment.segment_id);
       this.savedSegments.update(segments => segments.filter(s => s.segment_id !== segment.segment_id));
@@ -720,10 +744,7 @@ export class NotificationsComponent {
       this.cancelDeleteSegment();
     }
   }
-
-  getFieldForFilter(filter: FilterCondition): FilterableField | undefined {
-    return this.filterableFields().find(f => f.key === filter.fieldKey);
-  }
+  getFieldForFilter(filter: FilterCondition): FilterableField | undefined { return this.filterableFields().find(f => f.key === filter.fieldKey); }
 
   // --- GENERAL ---
   closeModal() {
@@ -731,14 +752,8 @@ export class NotificationsComponent {
     this.modalContent.set(null);
   }
 
-  getTemplateName(templateId: number): string {
-    return this.templates().find(t => t.id === templateId)?.name || 'Unknown';
-  }
-  
-  getContactNameByPhone(phone: string): string {
-    const contact = this.allBotContacts().find(c => c.phone_number === phone);
-    return contact?.name || this.languageService.T('unidentifiedContact');
-  }
+  getTemplateName(templateId: number): string { return this.templates().find(t => t.id === templateId)?.name || 'Unknown'; }
+  getContactNameByPhone(phone: string): string { return this.allBotContacts().find(c => c.phone_number === phone)?.name || this.languageService.T('unidentifiedContact'); }
   
   formatDate(isoString: string | null | undefined): string {
     if (!isoString) return 'N/A';
@@ -751,35 +766,25 @@ export class NotificationsComponent {
     const lang = this.languageService;
     const isBefore = minutes < 0;
     const absMinutes = Math.abs(minutes);
-
     if (absMinutes === 0) return 'At time of event';
-    
     const days = Math.floor(absMinutes / 1440);
     const hours = Math.floor((absMinutes % 1440) / 60);
     const mins = absMinutes % 60;
-
     let parts = [];
     if (days > 0) parts.push(`${days} ${lang.T(days > 1 ? 'days' : 'day')}`);
     if (hours > 0) parts.push(`${hours} ${lang.T(hours > 1 ? 'hours' : 'hour')}`);
     if (mins > 0) parts.push(`${mins} ${lang.T(mins > 1 ? 'minutes' : 'minute')}`);
-    
     if (parts.length === 0) return 'N/A';
-    
     const timeString = parts.join(', ');
     const timeframe = isBefore ? lang.T('beforeEvent') : lang.T('afterEvent');
-    
     return `${timeString} ${timeframe}`;
   }
 
   formatFilters(config: NotificationConfig): string {
     const lang = this.languageService;
     let filters: string[] = [];
-    if (config.apply_if_payment_status) {
-      filters.push(`${lang.T('paymentStatus')}: ${lang.T('paymentStatus_' + config.apply_if_payment_status)}`);
-    }
-    if (config.apply_if_confirmation_status) {
-      filters.push(`${lang.T('confirmationStatus')}: ${lang.T('confirmationStatus_' + config.apply_if_confirmation_status)}`);
-    }
+    if (config.apply_if_payment_status) { filters.push(`${lang.T('paymentStatus')}: ${lang.T('paymentStatus_' + config.apply_if_payment_status)}`); }
+    if (config.apply_if_confirmation_status) { filters.push(`${lang.T('confirmationStatus')}: ${lang.T('confirmationStatus_' + config.apply_if_confirmation_status)}`); }
     return filters.join(', ');
   }
 

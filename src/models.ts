@@ -81,6 +81,7 @@ export interface Bot {
   key_qdrant: string;
   meta_token: string;
   waba_id?: string;
+  phone_number_id?: string;
   key_chatwood: string;
   account_id_chatwood: number | null;
   url_espo: string;
@@ -196,6 +197,7 @@ export interface Procedure {
   cost_max: number;
   cost_note: string;
   media_links: ProcedureMediaLink[];
+  recurrence_days?: number;
 }
 
 export interface Professional {
@@ -238,6 +240,9 @@ export interface PatientAppointment {
     google_event_id: string | null;
     created_at: string;
     updated_at: string;
+    reminder_sent_at?: string | null;
+    pre_instructions_sent_at?: string | null;
+    post_instructions_sent_at?: string | null;
 }
 
 // === CONTACTS ===
@@ -250,6 +255,7 @@ export interface Contact {
   attributes?: Record<string, any>;
   created_at: string;
   updated_at: string;
+  birth_date?: string | null;
 }
 
 // === SEGMENTATION ===
@@ -342,6 +348,7 @@ export interface NotificationConfig {
   apply_if_payment_status?: PaymentStatus;
   apply_if_confirmation_status?: ConfirmationStatus;
   metadata?: any;
+  health_status?: 'ok' | 'warning' | 'error'; 
 }
 
 export type CampaignStatus = 'DRAFT' | 'READY' | 'RUNNING' | 'COMPLETED' | 'FINISHED';
@@ -382,6 +389,17 @@ export interface ExecuteCampaignResponse {
   message: string;
   total_contacts: number;
   campaign_status: CampaignStatus;
+}
+
+export interface NotificationHistory {
+  history_id: number;
+  bot_id: string;
+  config_id: number;
+  contact_phone: string;
+  status: 'QUEUED' | 'SENT' | 'FAILED';
+  created_at: string;
+  sent_at: string | null;
+  error_message: string | null;
 }
 
 

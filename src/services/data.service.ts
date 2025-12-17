@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment } from '../models';
+import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment, NotificationHistory } from '../models';
 import { ApiService } from './api.service';
 
 @Injectable({
@@ -295,6 +295,15 @@ export class DataService {
 
   async deleteNotificationConfig(config: NotificationConfig): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${config.bot_id}/notifications/configs/${config.id}`));
+  }
+
+  async getNotificationHistory(botId: string, configId: number): Promise<NotificationHistory[]> {
+    return this.get<NotificationHistory[]>(`${this.apiService.baseUrl}/bots/${botId}/notifications/configs/${configId}/history`, []);
+  }
+
+  async testNotificationConfig(botId: string, configId: number, contactId: string): Promise<void> {
+    const url = `${this.apiService.baseUrl}/bots/${botId}/notifications/configs/${configId}/test`;
+    return firstValueFrom(this.http.post<void>(url, { contact_id: contactId }));
   }
 
   async getCampaigns(botId: string): Promise<Campaign[]> {

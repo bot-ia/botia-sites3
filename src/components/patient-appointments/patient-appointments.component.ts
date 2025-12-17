@@ -1,6 +1,3 @@
-
-
-
 import { Component, ChangeDetectionStrategy, input, signal, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -109,8 +106,16 @@ export class PatientAppointmentsComponent {
   }
 
   // === MODAL MANAGEMENT ===
+  private toLocalISOString(date: Date): string {
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
   openModal(item: PatientAppointment | null = null) {
-    const appointmentTime = item?.appointment_date ? new Date(item.appointment_date).toISOString().substring(0, 16) : new Date().toISOString().substring(0, 16);
+    const appointmentTime = item?.appointment_date 
+      ? this.toLocalISOString(new Date(item.appointment_date)) 
+      : this.toLocalISOString(new Date());
+
     this.editingAppointment.set(item ? { ...item, appointment_date: appointmentTime } : {
       bot_id: this.botId(),
       user_id: '',

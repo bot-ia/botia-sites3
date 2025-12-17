@@ -64,7 +64,8 @@ export class ProceduresComponent {
         cost_min: 0,
         cost_max: 0,
         cost_note: '',
-        media_links: []
+        media_links: [],
+        recurrence_days: undefined
       });
     }
     this.isModalOpen.set(true);
