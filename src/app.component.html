@@ -168,7 +168,10 @@
                 <option [value]="null">{{ languageService.T('noBotsAvailable') }}</option>
               } @else {
                 @for (bot of bots(); track bot.bot_id) {
-                  <option [value]="bot.bot_id">{{ bot.nombre }} ({{ bot.company }})</option>
+                  <option [value]="bot.bot_id">
+                    {{ bot.nombre }} ({{ bot.company }})
+                    <span *ngIf="bot.botType === 'programs_events'" style="background:#f59e42;color:#fff;padding:2px 8px;border-radius:8px;font-size:0.8em;margin-left:6px;">Nuevo</span>
+                  </option>
                 }
               }
             </select>
