@@ -1,0 +1,556 @@
+<div class="animate-fade-in space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white">{{ languageService.T('programsEvents') }}</h1>
+      <p class="text-slate-500 dark:text-slate-400 mt-1">{{ languageService.T('programsEventsSubtitle') }}</p>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700">
+    <div class="flex border-b border-slate-200 dark:border-slate-700">
+      <button (click)="activeTab.set('events')" [class.bg-slate-100]="activeTab() === 'events'" [class.dark:bg-slate-900]="activeTab() === 'events'" [class.text-indigo-600]="activeTab() === 'events'" [class.dark:text-indigo-400]="activeTab() === 'events'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('events') }}</button>
+      <button (click)="activeTab.set('sessions')" [class.bg-slate-100]="activeTab() === 'sessions'" [class.dark:bg-slate-900]="activeTab() === 'sessions'" [class.text-indigo-600]="activeTab() === 'sessions'" [class.dark:text-indigo-400]="activeTab() === 'sessions'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('eventSessions') }}</button>
+      <button (click)="activeTab.set('messages')" [class.bg-slate-100]="activeTab() === 'messages'" [class.dark:bg-slate-900]="activeTab() === 'messages'" [class.text-indigo-600]="activeTab() === 'messages'" [class.dark:text-indigo-400]="activeTab() === 'messages'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('messageVariants') }}</button>
+      <button (click)="activeTab.set('metrics')" [class.bg-slate-100]="activeTab() === 'metrics'" [class.dark:bg-slate-900]="activeTab() === 'metrics'" [class.text-indigo-600]="activeTab() === 'metrics'" [class.dark:text-indigo-400]="activeTab() === 'metrics'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('metrics') }}</button>
+      <button (click)="activeTab.set('event_types')" [class.bg-slate-100]="activeTab() === 'event_types'" [class.dark:bg-slate-900]="activeTab() === 'event_types'" [class.text-indigo-600]="activeTab() === 'event_types'" [class.dark:text-indigo-400]="activeTab() === 'event_types'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('eventTypes') }}</button>
+    </div>
+
+    @if (isLoading()) {
+      <div class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('loading') }}</div>
+    } @else {
+      <div class="p-6">
+        @switch (activeTab()) {
+          @case ('event_types') {
+            <div class="flex justify-end mb-4">
+              <button (click)="openEventTypeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow-md hover:shadow-lg">
+                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                {{ languageService.T('newEventType') }}
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="p-3 font-semibold">{{ languageService.T('code') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('name') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('description') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('requirements') }}</th>
+                    <th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for(type of eventTypes(); track type.id) {
+                    <tr class="border-t border-slate-200 dark:border-slate-700">
+                      <td class="p-3 font-mono text-sm text-slate-600 dark:text-slate-300">{{ type.code }}</td>
+                      <td class="p-3 font-medium text-slate-800 dark:text-white">{{ type.name }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ type.description }}</td>
+                      <td class="p-3 text-sm text-slate-500 dark:text-slate-400">
+                        {{ languageService.T('hasSchedule') }}: {{ type.has_schedule ? languageService.T('yes') : languageService.T('no') }} ·
+                        {{ languageService.T('hasLocation') }}: {{ type.has_location ? languageService.T('yes') : languageService.T('no') }} ·
+                        {{ languageService.T('hasCapacity') }}: {{ type.has_capacity ? languageService.T('yes') : languageService.T('no') }}
+                      </td>
+                      <td class="p-3 text-right">
+                        <button (click)="openEventTypeModal(type)" class="text-blue-500 hover:text-blue-400 text-sm mr-3">{{ languageService.T('edit') }}</button>
+                        <button (click)="requestDelete({ type: 'event_type', item: type, label: type.name })" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noEventTypes') }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @case ('events') {
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div class="flex flex-wrap gap-3">
+                <input type="text" [(ngModel)]="eventSearch" [placeholder]="languageService.T('searchEvents')" class="w-64 bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                <select [(ngModel)]="eventTypeFilter" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                  <option [ngValue]="'all'">{{ languageService.T('allEventTypes') }}</option>
+                  @for(type of eventTypes(); track type.id) { <option [ngValue]="type.id">{{ type.name }}</option> }
+                </select>
+                <select [(ngModel)]="eventCategoryFilter" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                  <option [ngValue]="'all'">{{ languageService.T('allCategories') }}</option>
+                  @for(cat of categories; track cat) { <option [ngValue]="cat">{{ cat }}</option> }
+                </select>
+                <input type="text" [(ngModel)]="eventBrandFilter" [placeholder]="languageService.T('brand')" class="w-40 bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                <select [(ngModel)]="eventStatusFilter" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                  <option value="all">{{ languageService.T('allStatuses') }}</option>
+                  <option value="active">{{ languageService.T('active') }}</option>
+                  <option value="inactive">{{ languageService.T('inactive') }}</option>
+                </select>
+              </div>
+              <button (click)="openEventModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow-md hover:shadow-lg">
+                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                {{ languageService.T('newEvent') }}
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="p-3 font-semibold">{{ languageService.T('title') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('type') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('brand') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('category') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('status') }}</th>
+                    <th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for(event of filteredEvents(); track event.id) {
+                    <tr class="border-t border-slate-200 dark:border-slate-700">
+                      <td class="p-3">
+                        <div class="font-medium text-slate-800 dark:text-white">{{ event.title }}</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400">{{ event.code }} · {{ event.short_title }}</div>
+                      </td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ getEventTypeName(event.event_type_id) }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ event.brand || '—' }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ event.category }}</td>
+                      <td class="p-3">
+                        <span class="px-2 py-1 text-xs rounded-full" [class.bg-green-100]="event.is_active" [class.text-green-700]="event.is_active" [class.bg-red-100]="!event.is_active" [class.text-red-700]="!event.is_active">{{ event.is_active ? languageService.T('active') : languageService.T('inactive') }}</span>
+                      </td>
+                      <td class="p-3 text-right">
+                        <button (click)="openEventModal(event)" class="text-blue-500 hover:text-blue-400 text-sm mr-3">{{ languageService.T('edit') }}</button>
+                        <button (click)="requestDelete({ type: 'event', item: event, label: event.title })" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="6" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noEventsFound') }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @case ('sessions') {
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div class="flex flex-wrap gap-3">
+                <select [(ngModel)]="sessionEventFilter" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                  <option [ngValue]="'all'">{{ languageService.T('allEvents') }}</option>
+                  @for(event of events(); track event.id) { <option [ngValue]="event.id">{{ event.title }}</option> }
+                </select>
+                <select [(ngModel)]="sessionStatusFilter" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                  <option [ngValue]="'all'">{{ languageService.T('allStatuses') }}</option>
+                  @for(status of sessionStatuses; track status) { <option [ngValue]="status">{{ status }}</option> }
+                </select>
+                <input type="text" [(ngModel)]="sessionSearch" [placeholder]="languageService.T('searchSessions')" class="w-64 bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+              </div>
+              <button (click)="openSessionModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow-md hover:shadow-lg">
+                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                {{ languageService.T('newSession') }}
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="p-3 font-semibold">{{ languageService.T('sessionName') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('event') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('startAt') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('deliveryMode') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('status') }}</th>
+                    <th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for(session of filteredSessions(); track session.id) {
+                    <tr class="border-t border-slate-200 dark:border-slate-700">
+                      <td class="p-3">
+                        <div class="font-medium text-slate-800 dark:text-white">{{ session.name }}</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400">{{ session.city }} {{ session.country }}</div>
+                      </td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ getEventTitle(session.event_id) }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ formatDate(session.start_at) }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ session.delivery_mode }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ session.status }}</td>
+                      <td class="p-3 text-right">
+                        <button (click)="openSessionModal(session)" class="text-blue-500 hover:text-blue-400 text-sm mr-3">{{ languageService.T('edit') }}</button>
+                        <button (click)="requestDelete({ type: 'session', item: session, label: session.name })" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="6" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noSessionsFound') }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @case ('messages') {
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div class="flex flex-wrap gap-3">
+                <select [(ngModel)]="messageEventFilter" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                  <option [ngValue]="'all'">{{ languageService.T('allEvents') }}</option>
+                  @for(event of events(); track event.id) { <option [ngValue]="event.id">{{ event.title }}</option> }
+                </select>
+              </div>
+              <button (click)="openMessageVariantModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow-md hover:shadow-lg">
+                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                {{ languageService.T('newMessageVariant') }}
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th class="p-3 font-semibold">{{ languageService.T('event') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('accountTier') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('metaTemplateName') }}</th>
+                    <th class="p-3 font-semibold">{{ languageService.T('ctaLabel') }}</th>
+                    <th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for(variant of filteredMessageVariants(); track variant.id) {
+                    <tr class="border-t border-slate-200 dark:border-slate-700">
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ getEventTitle(variant.event_id) }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ variant.account_tier }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ variant.meta_template_name }}</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ variant.cta_label }}</td>
+                      <td class="p-3 text-right">
+                        <button (click)="openMessageVariantModal(variant)" class="text-blue-500 hover:text-blue-400 text-sm mr-3">{{ languageService.T('edit') }}</button>
+                        <button (click)="requestDelete({ type: 'message_variant', item: variant, label: variant.meta_template_name })" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noMessageVariants') }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @case ('metrics') {
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <select [(ngModel)]="metricsEventFilter" (ngModelChange)="loadRegistrationsForMetrics()" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                <option [ngValue]="'all'">{{ languageService.T('allEvents') }}</option>
+                @for(event of events(); track event.id) { <option [ngValue]="event.id">{{ event.title }}</option> }
+              </select>
+              <div class="text-sm text-slate-500 dark:text-slate-400">{{ languageService.T('metricsHint') }}</div>
+            </div>
+            <div class="space-y-4">
+              @for(session of metricsSessions(); track session.id) {
+                @if (getSessionCounts(session.id); as counts) {
+                  <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50 dark:bg-slate-900/50">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="font-semibold text-slate-800 dark:text-white">{{ session.name }}</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400">{{ getEventTitle(session.event_id) }} · {{ formatDate(session.start_at) }}</div>
+                      </div>
+                      <div class="text-sm text-slate-500 dark:text-slate-400">{{ languageService.T('total') }}: {{ counts.total }}</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <h4 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-2">{{ languageService.T('byAccountTier') }}</h4>
+                        <div class="grid grid-cols-4 gap-2">
+                          @for(tier of accountTiers; track tier) {
+                            <div class="p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-center">
+                              <div class="text-xs text-slate-500 dark:text-slate-400">{{ tier }}</div>
+                              <div class="text-lg font-semibold text-slate-800 dark:text-white">{{ counts.byTier[tier] }}</div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                      <div>
+                        <h4 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-2">{{ languageService.T('byStatus') }}</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                          @for(status of ['PRE_REGISTRO','CONFIRMADO','CANCELADO','NO_SHOW','ASISTIO']; track status) {
+                            <div class="p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-center">
+                              <div class="text-xs text-slate-500 dark:text-slate-400">{{ status }}</div>
+                              <div class="text-lg font-semibold text-slate-800 dark:text-white">{{ counts.byStatus[status] || 0 }}</div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              } @empty {
+                <div class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('noMetricsData') }}</div>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>
+
+@if (isModalOpen()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    @switch (modalContent()) {
+      @case ('event_type') {
+        @if (editingEventType(); as eventType) {
+          <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl border border-slate-200 dark:border-slate-700">
+            <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(eventType.id ? 'editEventType' : 'createEventType') }}</h2>
+            <form #form="ngForm" (ngSubmit)="saveEventType()">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('code') }}</label>
+                  <input type="text" [(ngModel)]="eventType.code" name="code" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('name') }}</label>
+                  <input type="text" [(ngModel)]="eventType.name" name="name" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('description') }}</label>
+                  <textarea [(ngModel)]="eventType.description" name="description" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" rows="3"></textarea>
+                </div>
+                <div class="flex items-center gap-4 md:col-span-2">
+                  <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><input type="checkbox" [(ngModel)]="eventType.has_schedule" name="has_schedule"> {{ languageService.T('hasSchedule') }}</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><input type="checkbox" [(ngModel)]="eventType.has_location" name="has_location"> {{ languageService.T('hasLocation') }}</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><input type="checkbox" [(ngModel)]="eventType.has_capacity" name="has_capacity"> {{ languageService.T('hasCapacity') }}</label>
+                </div>
+              </div>
+              <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+                <button type="submit" [disabled]="form.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('save') }}</button>
+              </div>
+            </form>
+          </div>
+        }
+      }
+      @case ('event') {
+        @if (editingEvent(); as event) {
+          <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-4xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(event.id ? 'editEvent' : 'createEvent') }}</h2>
+            <form #form="ngForm" (ngSubmit)="saveEvent()">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('eventType') }}</label>
+                  <select [(ngModel)]="event.event_type_id" name="event_type_id" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    @for(type of eventTypes(); track type.id) { <option [ngValue]="type.id">{{ type.name }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('code') }}</label>
+                  <input type="text" [(ngModel)]="event.code" name="code" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('title') }}</label>
+                  <input type="text" [(ngModel)]="event.title" name="title" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('shortTitle') }}</label>
+                  <input type="text" [(ngModel)]="event.short_title" name="short_title" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('topic') }}</label>
+                  <input type="text" [(ngModel)]="event.topic" name="topic" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('objective') }}</label>
+                  <input type="text" [(ngModel)]="event.objective" name="objective" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('audienceLevel') }}</label>
+                  <select [(ngModel)]="event.audience_level" name="audience_level" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    @for(level of audienceLevels; track level) { <option [ngValue]="level">{{ level }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('category') }}</label>
+                  <select [(ngModel)]="event.category" name="category" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    @for(cat of categories; track cat) { <option [ngValue]="cat">{{ cat }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('brand') }}</label>
+                  <input type="text" [(ngModel)]="event.brand" name="brand" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('defaultDuration') }}</label>
+                  <input type="number" [(ngModel)]="event.default_duration_minutes" name="default_duration_minutes" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('defaultLanguage') }}</label>
+                  <input type="text" [(ngModel)]="event.default_language" name="default_language" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('description') }}</label>
+                  <textarea [(ngModel)]="event.description" name="description" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" rows="6"></textarea>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('contentNotes') }}</label>
+                  <textarea [(ngModel)]="event.content_notes" name="content_notes" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" rows="3"></textarea>
+                </div>
+                <div class="md:col-span-2 flex items-center gap-3">
+                  <input type="checkbox" [(ngModel)]="event.is_active" name="is_active" class="h-4 w-4">
+                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ languageService.T('isActive') }}</span>
+                </div>
+              </div>
+              <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+                <button type="submit" [disabled]="form.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('save') }}</button>
+              </div>
+            </form>
+          </div>
+        }
+      }
+      @case ('session') {
+        @if (editingSession(); as session) {
+          <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-4xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(session.id ? 'editSession' : 'createSession') }}</h2>
+            <form #form="ngForm" (ngSubmit)="saveSession()">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('event') }}</label>
+                  <select [(ngModel)]="session.event_id" name="event_id" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    @for(event of events(); track event.id) { <option [ngValue]="event.id">{{ event.title }}</option> }
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('sessionName') }}</label>
+                  <input type="text" [(ngModel)]="session.name" name="name" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('startAt') }}</label>
+                  <input type="datetime-local" [(ngModel)]="session.start_at" name="start_at" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('endAt') }}</label>
+                  <input type="datetime-local" [(ngModel)]="session.end_at" name="end_at" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('durationMinutes') }}</label>
+                  <input type="number" [(ngModel)]="session.duration_minutes" name="duration_minutes" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('timeZone') }}</label>
+                  <input type="text" [(ngModel)]="session.time_zone" name="time_zone" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('deliveryMode') }}</label>
+                  <select [(ngModel)]="session.delivery_mode" name="delivery_mode" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    @for(mode of deliveryModes; track mode) { <option [ngValue]="mode">{{ mode }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('status') }}</label>
+                  <select [(ngModel)]="session.status" name="status" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    @for(status of sessionStatuses; track status) { <option [ngValue]="status">{{ status }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('locationName') }}</label>
+                  <input type="text" [(ngModel)]="session.location_name" name="location_name" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('locationAddress') }}</label>
+                  <input type="text" [(ngModel)]="session.location_address" name="location_address" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('city') }}</label>
+                  <input type="text" [(ngModel)]="session.city" name="city" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('country') }}</label>
+                  <input type="text" [(ngModel)]="session.country" name="country" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('meetingLink') }}</label>
+                  <input type="url" [(ngModel)]="session.meeting_link" name="meeting_link" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('speakerName') }}</label>
+                  <input type="text" [(ngModel)]="session.speaker_name" name="speaker_name" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('speakerTitle') }}</label>
+                  <input type="text" [(ngModel)]="session.speaker_title" name="speaker_title" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('speakerBio') }}</label>
+                  <textarea [(ngModel)]="session.speaker_bio" name="speaker_bio" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" rows="3"></textarea>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('capacity') }}</label>
+                  <input type="number" [(ngModel)]="session.capacity" name="capacity" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('registrationDeadline') }}</label>
+                  <input type="datetime-local" [(ngModel)]="session.registration_deadline_at" name="registration_deadline_at" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('tags') }}</label>
+                  <input type="text" [(ngModel)]="session.tags_text" name="tags_text" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" [placeholder]="languageService.T('tagsPlaceholder')">
+                </div>
+                <div class="md:col-span-2 flex items-center gap-3">
+                  <input type="checkbox" [(ngModel)]="session.registration_open" name="registration_open" class="h-4 w-4">
+                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ languageService.T('registrationOpen') }}</span>
+                </div>
+              </div>
+              <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+                <button type="submit" [disabled]="form.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('save') }}</button>
+              </div>
+            </form>
+          </div>
+        }
+      }
+      @case ('message_variant') {
+        @if (editingMessageVariant(); as variant) {
+          <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl border border-slate-200 dark:border-slate-700">
+            <h2 class="text-2xl font-bold mb-6 text-slate-900 dark:text-white">{{ languageService.T(variant.id ? 'editMessageVariant' : 'createMessageVariant') }}</h2>
+            <form #form="ngForm" (ngSubmit)="saveMessageVariant()">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('event') }}</label>
+                  <select [(ngModel)]="variant.event_id" name="event_id" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    @for(event of events(); track event.id) { <option [ngValue]="event.id">{{ event.title }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('accountTier') }}</label>
+                  <select [(ngModel)]="variant.account_tier" name="account_tier" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                    @for(tier of accountTiers; track tier) { <option [ngValue]="tier">{{ tier }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('ctaType') }}</label>
+                  <input type="text" [(ngModel)]="variant.cta_type" name="cta_type" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('metaTemplateName') }}</label>
+                  <input type="text" [(ngModel)]="variant.meta_template_name" name="meta_template_name" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('ctaLabel') }}</label>
+                  <input type="text" [(ngModel)]="variant.cta_label" name="cta_label" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('bodyPreview') }}</label>
+                  <textarea [(ngModel)]="variant.body_preview" name="body_preview" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" rows="3"></textarea>
+                </div>
+              </div>
+              <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>
+                <button type="submit" [disabled]="form.invalid" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('save') }}</button>
+              </div>
+            </form>
+          </div>
+        }
+      }
+    }
+  </div>
+}
+
+@if (deleteTarget(); as target) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-pop-in">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700 text-center">
+      <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
+        <svg class="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+      </div>
+      <h2 class="text-2xl font-bold mt-4 text-slate-900 dark:text-white">{{ languageService.T('deleteConfirmationTitle') }}</h2>
+      <p class="text-slate-500 dark:text-slate-400 mt-2">{{ languageService.T('deleteConfirmationMessage').replace('{itemType}', languageService.T('itemType_record')).replace('{itemName}', target.label) }}</p>
+      <p class="text-sm text-red-500 dark:text-red-400 font-semibold mt-2">{{ languageService.T('deleteConfirmationWarning') }}</p>
+      <div class="flex justify-center gap-4 mt-6">
+        <button type="button" (click)="cancelDelete()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('cancel') }}</button>
+        <button type="button" (click)="confirmDelete()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">{{ languageService.T('confirmDeleteButton') }}</button>
+      </div>
+    </div>
+  </div>
+}

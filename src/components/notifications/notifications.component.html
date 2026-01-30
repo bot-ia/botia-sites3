@@ -206,6 +206,8 @@
                         <div class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                           <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('campaignName') }}:</strong> {{ campaign.name }}</p>
                           <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('template') }}:</strong> {{ getTemplateName(campaign.template_id) }}</p>
+                          <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('event') }}:</strong> {{ getEventName(campaign.event_id) }}</p>
+                          <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('session') }}:</strong> {{ getSessionName(campaign.event_session_id) }}</p>
                           <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('status') }}:</strong> <span class="px-2 py-1 rounded-full text-xs" [class]="getCampaignStatusColor(campaign.status)">{{ languageService.T('status_' + campaign.status) }}</span></p>
                            <p><strong class="text-slate-500 dark:text-slate-400">{{ languageService.T('createdAt') }}:</strong> {{ formatDate(campaign.created_at) }}</p>
                         </div>
@@ -473,6 +475,20 @@
             <div class="space-y-4">
                 <div><label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('campaignName') }}</label><input type="text" [(ngModel)]="newCampaign().name" name="name" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required></div>
                 <div><label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('template') }}</label><select [(ngModel)]="newCampaign().template_id" name="template_id" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" required>@for(t of approvedTemplates(); track t.id){<option [value]="t.id">{{t.name}}</option>}</select></div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('event') }}</label>
+                  <select [(ngModel)]="newCampaign().event_id" (ngModelChange)="onCampaignEventChange($event)" name="event_id" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                    <option [ngValue]="null">{{ languageService.T('noEventSelected') }}</option>
+                    @for(event of events(); track event.id){<option [ngValue]="event.id">{{ event.title }}</option>}
+                  </select>
+                </div>
+                <div>
+                  <label class="block mb-2 font-semibold text-slate-600 dark:text-slate-300">{{ languageService.T('session') }}</label>
+                  <select [(ngModel)]="newCampaign().event_session_id" name="event_session_id" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600" [disabled]="!newCampaign().event_id">
+                    <option [ngValue]="null">{{ languageService.T('noSessionSelected') }}</option>
+                    @for(session of eventSessions(); track session.id){<option [ngValue]="session.id">{{ session.name }}</option>}
+                  </select>
+                </div>
             </div>
              <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
               <button type="button" (click)="closeModal()" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-2 px-4 rounded-lg">{{ languageService.T('cancel') }}</button>

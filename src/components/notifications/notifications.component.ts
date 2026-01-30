@@ -5,7 +5,7 @@ import { DataService } from '../../services/data.service';
 import { LanguageService } from '../../services/language.service';
 import { ToastService } from '../../services/toast.service';
 import { AuthService } from '../../services/auth.service';
-import { WATemplate, NotificationConfig, Campaign, NotificationQueueItem, WATemplateDetail, NotificationType, PaymentStatus, ConfirmationStatus, TemplateParameter, Contact, CampaignContact, CampaignStatus, ExecuteCampaignResponse, FilterableField, FilterCondition, Operator, SavedSegment, NotificationHistory } from '../../models';
+import { WATemplate, NotificationConfig, Campaign, NotificationQueueItem, WATemplateDetail, NotificationType, PaymentStatus, ConfirmationStatus, TemplateParameter, Contact, CampaignContact, CampaignStatus, ExecuteCampaignResponse, FilterableField, FilterCondition, Operator, SavedSegment, NotificationHistory, Event as ProgramEvent, EventSession } from '../../models';
 
 type NotificationSubView = 'templates' | 'configs' | 'campaigns' | 'queue';
 
@@ -41,6 +41,8 @@ export class NotificationsComponent {
   campaigns = signal<Campaign[]>([]);
   queueItems = signal<NotificationQueueItem[]>([]);
   allBotContacts = signal<Contact[]>([]);
+  events = signal<ProgramEvent[]>([]);
+  eventSessions = signal<EventSession[]>([]);
 
   // Modal State
   isModalOpen = signal(false);
@@ -48,7 +50,7 @@ export class NotificationsComponent {
 
   editingTemplate = signal<WATemplateDetail | null>(null);
   editingConfig = signal<Partial<NotificationConfig> | null>(null);
-  newCampaign = signal<{ name: string, template_id: number | null }>({ name: '', template_id: null });
+  newCampaign = signal<{ name: string, template_id: number | null, event_id: number | null, event_session_id: number | null }>({ name: '', template_id: null, event_id: null, event_session_id: null });
   configToDelete = signal<NotificationConfig | null>(null);
   
   // Offset UI State for Automations
@@ -162,16 +164,18 @@ export class NotificationsComponent {
 
   async loadAllData(botId: string) {
     this.isLoading.set(true);
-    const [templates, configs, campaigns, queue] = await Promise.all([
+    const [templates, configs, campaigns, queue, events] = await Promise.all([
       this.dataService.getWaTemplates(botId),
       this.dataService.getNotificationConfigs(botId),
       this.dataService.getCampaigns(botId),
-      this.dataService.getNotificationQueue(botId)
+      this.dataService.getNotificationQueue(botId),
+      this.dataService.getEvents(botId)
     ]);
     this.templates.set(templates);
     this.configs.set(configs);
     this.campaigns.set(campaigns);
     this.queueItems.set(queue);
+    this.events.set(events);
     this.isLoading.set(false);
   }
 
@@ -423,6 +427,7 @@ export class NotificationsComponent {
       });
     }
 
+    await this.loadSessionsForCampaign(campaignDetails.event_id ?? null);
     this.selectedCampaign.set({ ...campaignDetails, contacts, template });
     this.isCampaignLoading.set(false);
   }
@@ -432,7 +437,8 @@ export class NotificationsComponent {
   }
 
   openNewCampaignModal() {
-     this.newCampaign.set({ name: '', template_id: this.approvedTemplates()[0]?.id ?? null });
+      this.newCampaign.set({ name: '', template_id: this.approvedTemplates()[0]?.id ?? null, event_id: null, event_session_id: null });
+      this.eventSessions.set([]);
      this.modalContent.set('newCampaign');
      this.isModalOpen.set(true);
   }
@@ -442,7 +448,7 @@ export class NotificationsComponent {
     if (!campaignData.name || !campaignData.template_id) return;
     
     try {
-      const newCampaign = await this.dataService.createCampaign(this.botId(), { name: campaignData.name, template_id: campaignData.template_id });
+      const newCampaign = await this.dataService.createCampaign(this.botId(), { name: campaignData.name, template_id: campaignData.template_id, event_id: campaignData.event_id, event_session_id: campaignData.event_session_id });
       this.campaigns.set(await this.dataService.getCampaigns(this.botId()));
       this.toastService.showSuccess(this.languageService.T('saveSuccess'));
       this.closeModal();
@@ -450,6 +456,35 @@ export class NotificationsComponent {
     } catch (e) {
       this.toastService.showError(this.languageService.T('saveError'));
     }
+  }
+
+  async onCampaignEventChange(eventId: number | null) {
+    if (!eventId) {
+      this.eventSessions.set([]);
+      this.newCampaign.update(c => ({ ...c, event_session_id: null }));
+      return;
+    }
+    const sessions = await this.dataService.getEventSessions(this.botId(), { event_id: eventId });
+    this.eventSessions.set(sessions);
+    this.newCampaign.update(c => ({ ...c, event_session_id: sessions[0]?.id ?? null }));
+  }
+
+  getEventName(eventId?: number | null): string {
+    if (!eventId) return this.languageService.T('noEventSelected');
+    return this.events().find(e => e.id === eventId)?.title ?? this.languageService.T('noEventSelected');
+  }
+
+  getSessionName(sessionId?: number | null): string {
+    if (!sessionId) return this.languageService.T('noSessionSelected');
+    return this.eventSessions().find(s => s.id === sessionId)?.name ?? this.languageService.T('noSessionSelected');
+  }
+
+  async loadSessionsForCampaign(eventId?: number | null) {
+    if (!eventId) {
+      this.eventSessions.set([]);
+      return;
+    }
+    this.eventSessions.set(await this.dataService.getEventSessions(this.botId(), { event_id: eventId }));
   }
 
   async openAddContactsModal() {

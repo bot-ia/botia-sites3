@@ -38,7 +38,7 @@ export class AdminComponent {
   isEditingExistingBot = signal(false);
   botSearchTerm = signal('');
   botSort = signal<{ column: 'nombre' | 'bot_id' | 'status', direction: 'asc' | 'desc' }>({ column: 'nombre', direction: 'asc' });
-  readonly botTypes: BotType[] = ['product', 'appointment', 'repair', 'aesthetic_clinic'];
+  readonly botTypes: BotType[] = ['product', 'appointment', 'repair', 'aesthetic_clinic', 'programs_events'];
 
   // Bot Delete State
   botToDelete = signal<Bot | null>(null);
@@ -143,7 +143,7 @@ export class AdminComponent {
     this.userSearchTerm.set('');
     
     // Conditionally fetch data relevant to the bot type to avoid 404 errors for unsupported features.
-    if (bot.botType !== 'aesthetic_clinic') {
+    if (bot.botType === 'product' || bot.botType === 'appointment' || bot.botType === 'repair') {
       const [prompts, links, items] = await Promise.all([
           this.dataService.getPrompts(bot.bot_id),
           this.dataService.getSpecialLinks(bot.bot_id),
@@ -226,6 +226,16 @@ export class AdminComponent {
             }
             return cleanAttr;
         });
+    }
+
+    if (botPayload.botType === 'programs_events') {
+      const existingKeys = new Set((botPayload.custom_attributes || []).map(attr => attr.key));
+      if (!existingKeys.has('tipo_cuenta')) {
+        botPayload.custom_attributes = [
+          ...(botPayload.custom_attributes || []),
+          { key: 'tipo_cuenta', label: 'Tipo de cuenta', type: 'select', options: ['A', 'B', 'C', 'D'] }
+        ];
+      }
     }
 
     this.isLoading.set(true);

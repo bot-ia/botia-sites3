@@ -52,6 +52,14 @@
             </a>
           }
 
+          <!-- Programs & Events Bot Links -->
+          @if (isProgramsEventsBot()) {
+            <a href="#" (click)="changeView('programs_events'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'programs_events'" [class.dark:bg-indigo-900/50]="activeView() === 'programs_events'" [class.text-indigo-600]="activeView() === 'programs_events'" [class.dark:text-indigo-400]="activeView() === 'programs_events'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h18M3 7.5h18M3 12h18M3 16.5h18M3 21h18" /></svg>
+              <span class="ml-4 font-semibold" [class.hidden]="!isSidebarOpen()">{{ languageService.T('programsEvents') }}</span>
+            </a>
+          }
+
           <!-- Product Bot Links -->
           @if (isProductBot()) {
             <a href="#" (click)="changeView('portfolio'); $event.preventDefault()" [class.bg-indigo-50]="activeView() === 'portfolio'" [class.dark:bg-indigo-900/50]="activeView() === 'portfolio'" [class.text-indigo-600]="activeView() === 'portfolio'" [class.dark:text-indigo-400]="activeView() === 'portfolio'" class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
@@ -200,6 +208,7 @@
             @case ('contacts') { <app-contacts [botId]="bot.bot_id" [selectedBot]="selectedBot()"></app-contacts> }
             @case ('patient_appointments') { <app-patient-appointments [botId]="bot.bot_id"></app-patient-appointments> }
             @case ('notifications') { <app-notifications [botId]="bot.bot_id"></app-notifications> }
+            @case ('programs_events') { <app-programs-events [botId]="bot.bot_id"></app-programs-events> }
           }
         } @else {
           @if(user.role === 'admin') {

@@ -59,7 +59,7 @@ export interface BusinessRulesConfig {
   moto_limits: VehicleLimit[];
 }
 
-export type BotType = 'product' | 'appointment' | 'repair' | 'aesthetic_clinic';
+export type BotType = 'product' | 'appointment' | 'repair' | 'aesthetic_clinic' | 'programs_events';
 
 export interface CustomAttribute {
   key: string;
@@ -359,6 +359,8 @@ export interface Campaign {
   name: string;
   template_id: number;
   status: CampaignStatus;
+  event_id?: number | null;
+  event_session_id?: number | null;
   scheduled_at?: string;
   total_contacts: number;
   created_at?: string;
@@ -402,8 +404,106 @@ export interface NotificationHistory {
   error_message: string | null;
 }
 
+// === PROGRAMS & EVENTS MODULE ===
+export type AccountTier = 'A' | 'B' | 'C' | 'D';
+export type EventAudienceLevel = 'AVANZADO' | 'INTERMEDIO' | 'INTRODUCTORIO';
+export type EventCategory = 'EDUCACION' | 'MARCA' | 'NEGOCIO';
+export type EventDeliveryMode = 'ONLINE' | 'PRESENCIAL' | 'HIBRIDO';
+export type EventSessionStatus = 'PROGRAMADO' | 'EN_EJECUCION' | 'FINALIZADO' | 'CANCELADO';
+export type EventRegistrationStatus = 'PRE_REGISTRO' | 'CONFIRMADO' | 'CANCELADO' | 'NO_SHOW' | 'ASISTIO';
 
-export type ChangeLogEntity = 'Bot' | 'Prompt' | 'PortfolioItem' | 'KnowledgeItem' | 'SpecialLink' | 'BusinessRules' | 'ServiceOrder' | 'KnowledgeDocument' | 'Procedure' | 'Contact' | 'Professional' | 'Calendar' | 'PatientAppointment' | 'WATemplate' | 'NotificationConfig' | 'Campaign';
+export interface EventType {
+  id: number;
+  bot_id: string;
+  code: string;
+  name: string;
+  description: string;
+  has_schedule: boolean;
+  has_location: boolean;
+  has_capacity: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Event {
+  id: number;
+  bot_id: string;
+  event_type_id: number;
+  code: string;
+  title: string;
+  short_title?: string | null;
+  topic: string;
+  objective: string;
+  audience_level: EventAudienceLevel;
+  brand: string;
+  category: EventCategory;
+  description: string;
+  content_notes?: string | null;
+  default_duration_minutes?: number | null;
+  default_language?: string | null;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EventSession {
+  id: number;
+  event_id: number;
+  name: string;
+  start_at?: string | null;
+  end_at?: string | null;
+  duration_minutes?: number | null;
+  time_zone?: string | null;
+  delivery_mode: EventDeliveryMode;
+  location_name?: string | null;
+  location_address?: string | null;
+  city?: string | null;
+  country?: string | null;
+  meeting_link?: string | null;
+  speaker_name?: string | null;
+  speaker_title?: string | null;
+  speaker_bio?: string | null;
+  capacity?: number | null;
+  status: EventSessionStatus;
+  registration_open: boolean;
+  registration_deadline_at?: string | null;
+  tags?: string[] | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EventRegistration {
+  id: number;
+  event_session_id: number;
+  contact_id: string;
+  account_tier: AccountTier;
+  source?: string | null;
+  registration_status: EventRegistrationStatus;
+  registered_at?: string | null;
+  confirmed_at?: string | null;
+  canceled_at?: string | null;
+  attended_at?: string | null;
+  notes?: string | null;
+  utm_campaign?: string | null;
+  utm_source?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EventMessageVariant {
+  id: number;
+  event_id: number;
+  account_tier: AccountTier;
+  meta_template_name: string;
+  cta_label: string;
+  cta_type: string;
+  body_preview?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
+export type ChangeLogEntity = 'Bot' | 'Prompt' | 'PortfolioItem' | 'KnowledgeItem' | 'SpecialLink' | 'BusinessRules' | 'ServiceOrder' | 'KnowledgeDocument' | 'Procedure' | 'Contact' | 'Professional' | 'Calendar' | 'PatientAppointment' | 'WATemplate' | 'NotificationConfig' | 'Campaign' | 'EventType' | 'Event' | 'EventSession' | 'EventMessageVariant' | 'EventRegistration';
 export type ChangeLogAction = 'Created' | 'Updated' | 'Deleted';
 
 export interface ChangeLog {

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment, NotificationHistory } from '../models';
+import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment, NotificationHistory, EventType, Event, EventSession, EventMessageVariant, EventRegistration } from '../models';
 import { ApiService } from './api.service';
 
 @Injectable({
@@ -264,6 +264,75 @@ export class DataService {
     return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${botId}/segments/${segmentId}`));
   }
 
+  // PROGRAMS & EVENTS MODULE
+  async getEventTypes(botId: string): Promise<EventType[]> {
+    return this.get<EventType[]>(`${this.apiService.baseUrl}/bots/${botId}/event_types`, []);
+  }
+  async saveEventType(botId: string, eventType: Partial<EventType>): Promise<EventType> {
+    const request = eventType.id
+      ? this.http.put<EventType>(`${this.apiService.baseUrl}/bots/${botId}/event_types/${eventType.id}`, eventType)
+      : this.http.post<EventType>(`${this.apiService.baseUrl}/bots/${botId}/event_types`, eventType);
+    return firstValueFrom(request);
+  }
+  async deleteEventType(botId: string, eventTypeId: number): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${botId}/event_types/${eventTypeId}`));
+  }
+
+  async getEvents(botId: string, filters?: { event_type_id?: number; brand?: string; category?: string; is_active?: boolean }): Promise<Event[]> {
+    let params = new HttpParams();
+    if (filters?.event_type_id !== undefined) params = params.set('event_type_id', String(filters.event_type_id));
+    if (filters?.brand) params = params.set('brand', filters.brand);
+    if (filters?.category) params = params.set('category', filters.category);
+    if (filters?.is_active !== undefined) params = params.set('is_active', String(filters.is_active));
+    return this.get<Event[]>(`${this.apiService.baseUrl}/bots/${botId}/events`, [], params);
+  }
+  async saveEvent(botId: string, event: Partial<Event>): Promise<Event> {
+    const request = event.id
+      ? this.http.put<Event>(`${this.apiService.baseUrl}/bots/${botId}/events/${event.id}`, event)
+      : this.http.post<Event>(`${this.apiService.baseUrl}/bots/${botId}/events`, event);
+    return firstValueFrom(request);
+  }
+  async deleteEvent(botId: string, eventId: number): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${botId}/events/${eventId}`));
+  }
+
+  async getEventSessions(botId: string, filters?: { event_id?: number; status?: string }): Promise<EventSession[]> {
+    let params = new HttpParams();
+    if (filters?.event_id !== undefined) params = params.set('event_id', String(filters.event_id));
+    if (filters?.status) params = params.set('status', filters.status);
+    return this.get<EventSession[]>(`${this.apiService.baseUrl}/bots/${botId}/event_sessions`, [], params);
+  }
+  async saveEventSession(botId: string, session: Partial<EventSession>): Promise<EventSession> {
+    const request = session.id
+      ? this.http.put<EventSession>(`${this.apiService.baseUrl}/bots/${botId}/event_sessions/${session.id}`, session)
+      : this.http.post<EventSession>(`${this.apiService.baseUrl}/bots/${botId}/event_sessions`, session);
+    return firstValueFrom(request);
+  }
+  async deleteEventSession(botId: string, sessionId: number): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${botId}/event_sessions/${sessionId}`));
+  }
+
+  async getEventMessageVariants(botId: string, eventId?: number): Promise<EventMessageVariant[]> {
+    const params = eventId ? new HttpParams().set('event_id', String(eventId)) : undefined;
+    return this.get<EventMessageVariant[]>(`${this.apiService.baseUrl}/bots/${botId}/event_message_variants`, [], params);
+  }
+  async saveEventMessageVariant(botId: string, variant: Partial<EventMessageVariant>): Promise<EventMessageVariant> {
+    const request = variant.id
+      ? this.http.put<EventMessageVariant>(`${this.apiService.baseUrl}/bots/${botId}/event_message_variants/${variant.id}`, variant)
+      : this.http.post<EventMessageVariant>(`${this.apiService.baseUrl}/bots/${botId}/event_message_variants`, variant);
+    return firstValueFrom(request);
+  }
+  async deleteEventMessageVariant(botId: string, variantId: number): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${botId}/event_message_variants/${variantId}`));
+  }
+
+  async getEventRegistrations(botId: string, filters?: { event_id?: number; event_session_id?: number }): Promise<EventRegistration[]> {
+    let params = new HttpParams();
+    if (filters?.event_id !== undefined) params = params.set('event_id', String(filters.event_id));
+    if (filters?.event_session_id !== undefined) params = params.set('event_session_id', String(filters.event_session_id));
+    return this.get<EventRegistration[]>(`${this.apiService.baseUrl}/bots/${botId}/event_registrations`, [], params);
+  }
+
 
   // NOTIFICATIONS MODULE
   async getWaTemplates(botId: string): Promise<WATemplate[]> {
@@ -310,7 +379,7 @@ export class DataService {
     return this.get<Campaign[]>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns`, []);
   }
 
-  async createCampaign(botId: string, campaign: { name: string, template_id: number }): Promise<Campaign> {
+  async createCampaign(botId: string, campaign: { name: string, template_id: number, event_id?: number | null, event_session_id?: number | null }): Promise<Campaign> {
     return firstValueFrom(this.http.post<Campaign>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns`, campaign));
   }
 
@@ -318,7 +387,7 @@ export class DataService {
     return this.get<Campaign | null>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}`, null);
   }
   
-  async updateCampaign(botId: string, campaignId: number, data: { name?: string; parameters?: Partial<TemplateParameter>[] }): Promise<Campaign> {
+  async updateCampaign(botId: string, campaignId: number, data: { name?: string; parameters?: Partial<TemplateParameter>[]; event_id?: number | null; event_session_id?: number | null }): Promise<Campaign> {
     return firstValueFrom(this.http.put<Campaign>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}`, data));
   }
   
