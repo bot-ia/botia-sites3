@@ -679,6 +679,10 @@ export const en = {
   validation_campaign_no_contacts: "You must assign at least one contact before executing.",
   validation_campaign_missing_params: "Required template parameters are missing.",
   validation_campaign_wrong_status: "Only campaigns in Draft or Ready status can be executed.",
+  validation_campaign_select_first: "Select a campaign to force send.",
+  forceSendNow: "Force send",
+  campaignDispatchSuccess: "Forced send. Sent: {sent}, failed: {failed}.",
+  campaignDispatchError: "Failed to force send.",
   unidentifiedContact: 'Unidentified Contact',
   removeContactFromCampaignConfirmation: "Are you sure you want to remove contact '{contactName}' ({contactPhone}) from this campaign?",
 

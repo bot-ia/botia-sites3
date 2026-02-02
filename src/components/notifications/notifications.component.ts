@@ -631,6 +631,31 @@ export class NotificationsComponent {
     }
   }
 
+  async forceDispatchFromQueue() {
+    const campaign = this.selectedCampaign();
+    if (!campaign) {
+      this.toastService.showError(this.languageService.T('validation_campaign_select_first'));
+      return;
+    }
+
+    this.isExecuting.set(true);
+    try {
+      const response = await this.dataService.dispatchCampaign(this.botId(), campaign.id);
+      const sent = response.sent ?? 0;
+      const failed = response.failed ?? 0;
+      this.toastService.showSuccess(
+        this.languageService.T('campaignDispatchSuccess')
+          .replace('{sent}', String(sent))
+          .replace('{failed}', String(failed))
+      );
+      this.queueItems.set(await this.dataService.getNotificationQueue(this.botId()));
+    } catch (e) {
+      this.toastService.showError(this.languageService.T('campaignDispatchError'));
+    } finally {
+      this.isExecuting.set(false);
+    }
+  }
+
   requestDeleteCampaign(campaign: Campaign) { this.campaignToDelete.set(campaign); }
   cancelDeleteCampaign() { this.campaignToDelete.set(null); }
 

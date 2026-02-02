@@ -680,6 +680,10 @@ export const es = {
   validation_campaign_no_contacts: "Debes asignar al menos un contacto antes de ejecutar.",
   validation_campaign_missing_params: "Faltan parámetros requeridos de la plantilla.",
   validation_campaign_wrong_status: "Solo las campañas en estado Borrador o Listo pueden ejecutarse.",
+  validation_campaign_select_first: "Selecciona una campaña para forzar el envío.",
+  forceSendNow: "Forzar envío",
+  campaignDispatchSuccess: "Envío forzado. Enviados: {sent}, fallidos: {failed}.",
+  campaignDispatchError: "No se pudo forzar el envío.",
   unidentifiedContact: 'Contacto sin Identificar',
   removeContactFromCampaignConfirmation: "¿Estás seguro de que quieres eliminar el contacto '{contactName}' ({contactPhone}) de esta campaña?",
 
