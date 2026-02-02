@@ -191,6 +191,20 @@ export class ProgramsEventsComponent {
     return isNaN(date.getTime()) ? '—' : date.toLocaleString();
   }
 
+  private toDatetimeLocal(value?: string | null): string | null {
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return null;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const mm = pad(date.getMonth() + 1);
+    const dd = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const mi = pad(date.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  }
+
   formatTags(tags?: string[] | null): string {
     return tags?.length ? tags.join(', ') : '—';
   }
@@ -221,7 +235,13 @@ export class ProgramsEventsComponent {
 
   openSessionModal(session?: EventSession) {
     const tagsText = session?.tags?.join(', ') ?? '';
-    this.editingSession.set(session ? { ...session, tags_text: tagsText } : { event_id: this.events()[0]?.id, name: '', start_at: null, end_at: null, duration_minutes: null, time_zone: 'America/Bogota', delivery_mode: 'ONLINE', location_name: '', location_address: '', city: '', country: '', meeting_link: '', speaker_name: '', speaker_title: '', speaker_bio: '', capacity: null, status: 'PROGRAMADO', registration_open: true, registration_deadline_at: null, tags_text: '' });
+    this.editingSession.set(session ? {
+      ...session,
+      start_at: this.toDatetimeLocal(session.start_at),
+      end_at: this.toDatetimeLocal(session.end_at),
+      registration_deadline_at: this.toDatetimeLocal(session.registration_deadline_at),
+      tags_text: tagsText,
+    } : { event_id: this.events()[0]?.id, name: '', start_at: null, end_at: null, duration_minutes: null, time_zone: 'America/Bogota', delivery_mode: 'ONLINE', location_name: '', location_address: '', city: '', country: '', meeting_link: '', speaker_name: '', speaker_title: '', speaker_bio: '', capacity: null, status: 'PROGRAMADO', registration_open: true, registration_deadline_at: null, tags_text: '' });
     this.modalContent.set('session');
     this.isModalOpen.set(true);
   }
