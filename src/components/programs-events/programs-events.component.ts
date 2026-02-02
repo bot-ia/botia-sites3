@@ -187,13 +187,35 @@ export class ProgramsEventsComponent {
 
   formatDate(iso?: string | null): string {
     if (!iso) return '—';
+    const parts = this.parseNaiveDate(iso);
+    if (parts) {
+      const date = new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
+      return isNaN(date.getTime()) ? '—' : date.toLocaleString();
+    }
     const date = new Date(iso);
     return isNaN(date.getTime()) ? '—' : date.toLocaleString();
   }
 
+  private parseNaiveDate(value?: string | null) {
+    if (!value) return null;
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!match) return null;
+    return {
+      year: Number(match[1]),
+      month: Number(match[2]),
+      day: Number(match[3]),
+      hour: Number(match[4]),
+      minute: Number(match[5]),
+    };
+  }
+
   private toDatetimeLocal(value?: string | null): string | null {
     if (!value) return null;
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+    const naive = this.parseNaiveDate(value);
+    if (naive) {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${naive.year}-${pad(naive.month)}-${pad(naive.day)}T${pad(naive.hour)}:${pad(naive.minute)}`;
+    }
     const date = new Date(value);
     if (isNaN(date.getTime())) return null;
     const pad = (n: number) => String(n).padStart(2, '0');
