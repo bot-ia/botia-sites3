@@ -205,6 +205,16 @@ export class ProgramsEventsComponent {
     return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
   }
 
+  private normalizeDatetimeForApi(value?: string | null): string | null {
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+    if (/^\d{6}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+      return `${value.slice(0, 4)}${value.slice(6)}`;
+    }
+    const normalized = this.toDatetimeLocal(value);
+    return normalized ?? null;
+  }
+
   formatTags(tags?: string[] | null): string {
     return tags?.length ? tags.join(', ') : '—';
   }
@@ -287,7 +297,13 @@ export class ProgramsEventsComponent {
     const payload = this.editingSession();
     if (!payload) return;
     const tags = payload.tags_text?.split(',').map(t => t.trim()).filter(Boolean) ?? [];
-    const finalPayload: Partial<EventSession> = { ...payload, tags };
+    const finalPayload: Partial<EventSession> = {
+      ...payload,
+      start_at: this.normalizeDatetimeForApi(payload.start_at ?? null),
+      end_at: this.normalizeDatetimeForApi(payload.end_at ?? null),
+      registration_deadline_at: this.normalizeDatetimeForApi(payload.registration_deadline_at ?? null),
+      tags,
+    };
     delete (finalPayload as EditableEventSession).tags_text;
     try {
       await this.dataService.saveEventSession(this.botId(), finalPayload);
