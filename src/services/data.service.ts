@@ -418,7 +418,7 @@ export class DataService {
   }
 
   async executeCampaign(botId: string, campaignId: number): Promise<ExecuteCampaignResponse> {
-    return firstValueFrom(this.http.post<ExecuteCampaignResponse>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}/run`, {}));
+    return firstValueFrom(this.http.post<ExecuteCampaignResponse>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/${campaignId}/dispatch`, {}));
   }
 
   async getNotificationQueue(botId: string, limit: number = 100): Promise<NotificationQueueItem[]> {

@@ -611,13 +611,16 @@ export class NotificationsComponent {
 
     try {
         const response = await this.dataService.executeCampaign(this.botId(), campaign.id);
+        const sentCount = response.sent ?? response.total_contacts ?? 0;
         this.toastService.showSuccess(
-          this.languageService.T('campaignExecutionSuccess').replace('{count}', String(response.total_contacts))
+          this.languageService.T('campaignExecutionSuccess').replace('{count}', String(sentCount))
         );
         
-        const newStatus = response.campaign_status;
-        this.selectedCampaign.update(c => c ? { ...c, status: newStatus } : null);
-        this.campaigns.update(cs => cs.map(c => c.id === campaign.id ? { ...c, status: newStatus } : c));
+        if (response.campaign_status) {
+          const newStatus = response.campaign_status;
+          this.selectedCampaign.update(c => c ? { ...c, status: newStatus } : null);
+          this.campaigns.update(cs => cs.map(c => c.id === campaign.id ? { ...c, status: newStatus } : c));
+        }
         this.activeSubView.set('queue');
         this.queueItems.set(await this.dataService.getNotificationQueue(this.botId()));
 

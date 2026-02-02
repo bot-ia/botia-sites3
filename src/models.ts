@@ -388,9 +388,12 @@ export interface NotificationQueueItem {
 }
 
 export interface ExecuteCampaignResponse {
-  message: string;
-  total_contacts: number;
-  campaign_status: CampaignStatus;
+  message?: string;
+  total_contacts?: number;
+  campaign_status?: CampaignStatus;
+  sent?: number;
+  failed?: number;
+  errors?: string[];
 }
 
 export interface NotificationHistory {
