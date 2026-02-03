@@ -5,8 +5,28 @@ Sistema completo para monitorear y consultar inscripciones a eventos, permitiend
 
 ---
 
-## 🗄️ Tabla Existente: `botia.event_registrations`
+## 🗄️ Tablas Existentes
 
+### `botia.event_invites` (Invitaciones Enviadas)
+```sql
+CREATE TABLE botia.event_invites (
+    id SERIAL PRIMARY KEY,
+    bot_id TEXT NOT NULL,
+    contact_id TEXT NOT NULL,
+    phone_number TEXT,
+    event_session_id INTEGER NOT NULL REFERENCES botia.event_sessions(id),
+    campaign_name TEXT,
+    channel TEXT, -- 'whatsapp', 'email', 'sms'
+    status TEXT, -- 'sent', 'delivered', 'read', 'failed', 'rechaza...'
+    sent_at TIMESTAMP WITH TIME ZONE,
+    last_updated_at TIMESTAMP WITH TIME ZONE,
+    utm_campaign TEXT,
+    utm_source TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### `botia.event_registrations` (Respuestas/Confirmaciones)
 ```sql
 CREATE TABLE botia.event_registrations (
     id SERIAL PRIMARY KEY,
@@ -27,63 +47,170 @@ CREATE TABLE botia.event_registrations (
 );
 ```
 
+### ⚠️ Problema Actual: Datos Desconectados
+
+**Flujo Real:**
+1. Se envía campaña → Registro en `event_invites` (status: 'sent', 'delivered', 'rechaza...')
+2. Usuario responde → Registro en `event_registrations` (status: 'CONFIRMADO', 'CANCELADO', etc.)
+
+**Problema:**
+- El frontend solo consulta `event_registrations`
+- **No cuenta las invitaciones sin respuesta** (perdiendo visibilidad de alcance real)
+- Un usuario que rechazó aparece en `event_invites` pero no en `event_registrations`
+
 ---
 
-## 📍 Endpoints Existentes (Ya Funcionan)
+## 📍 Endpoints Existentes
 
-### `GET /api/bots/{bot_id}/event_registrations`
+### ⚠️ `GET /api/bots/{bot_id}/event_registrations` (INCOMPLETO)
+
+**Problema:** Solo devuelve usuarios que respondieron, ignora invitaciones sin respuesta.
 
 **Query Parameters:**
 - `event_id` (optional): Filtrar por evento
 - `event_session_id` (optional): Filtrar por sesión específica
 
-**Response:**
+**Response Actual:**
+```json
+[]
+```
+*Nota: Devuelve vacío aunque existan invitaciones en `event_invites`*
+
+**Ejemplo con Datos:**
 ```json
 [
   {
     "id": 1,
     "event_session_id": 3,
     "contact_id": "3474",
-    "account_tier": "standard",
-    "source": "whatsapp_campaign",
     "registration_status": "canceled",
     "registered_at": "2026-02-03T21:50:33.502313Z",
-    "confirmed_at": null,
-    "canceled_at": "2026-02-03T23:03:35.014495Z",
-    "attended_at": null,
-    "notes": null,
-    "utm_campaign": "Webinar en vivo",
-    "utm_source": null,
-    "created_at": "2026-02-03T21:50:33.502313Z",
-    "updated_at": "2026-02-03T23:03:35.014495Z"
+    "canceled_at": "2026-02-03T23:03:35.014495Z"
   }
 ]
 ```
 
-✅ **Este endpoint ya existe y funciona correctamente.**
+✅ **Este endpoint existe pero es INSUFICIENTE para el monitor.**
 
-⚠️ **Nota Importante sobre Estados**: El backend devuelve estados en minúsculas inglés (`"canceled"`, `"confirmed"`, etc.), pero el frontend ha sido actualizado para normalizarlos automáticamente a formato español mayúsculas (`"CANCELADO"`, `"CONFIRMADO"`, etc.) para una mejor experiencia de usuario.
+### ✅ `GET /api/bots/{bot_id}/event_invites` (Existe, confirmar acceso)
 
-### Mapeo de Estados Backend → Frontend
+**Necesidad:** Consultar invitaciones enviadas.
 
-| Backend (API) | Frontend (UI) | Traducción ES |
-|---------------|---------------|---------------|
-| `canceled` / `cancelado` | `CANCELADO` | Cancelado |
-| `confirmed` / `confirmado` | `CONFIRMADO` | Confirmado |
-| `pre_registro` | `PRE_REGISTRO` | Pre-registro |
-| `attended` / `asistio` | `ASISTIO` | Asistió |
-| `no_show` | `NO_SHOW` | No Asistió |
+**Query Parameters:**
+- `event_session_id` (required): Filtrar por sesión
 
----
+**Response Esperado:**
+```json
+[
+  {
+    "id": 4,
+    "bot_id": "CONS_ASIS",
+    "contact_id": "3474",
+    "phone_number": "+573142376428",
+    "event_session_id": 3,
+    "campaign_name": "Webinar en vivo",
+    🔥 PRIORIDAD CRÍTICA: Endpoint Consolidado
 
-## 🆕 Endpoints Adicionales Requeridos
+### 1. `GET /api/bots/{bot_id}/event_sessions/{session_id}/invites-and-registrations`
 
-### 1. `GET /api/bots/{bot_id}/events/{event_id}/stats`
+**Descripción**: Combinar datos de `event_invites` + `event_registrations` para monitor completo.
 
-**Descripción**: Obtener estadísticas agregadas de un evento completo.
+**Lógica:**
+```sql
+-- Pseudo-código SQL
+SELECT 
+  COALESCE(i.contact_id, r.contact_id) as contact_id,
+  i.phone_number,
+  i.campaign_name,
+  i.status as invite_status,
+  i.sent_at as invited_at,
+  r.registration_status,
+  r.confirmed_at,
+  r.canceled_at,
+  r.attended_at,
+  CASE 
+    WHEN r.id IS NOT NULL THEN 'responded'
+    WHEN i.id IS NOT NULL THEN 'invited_no_response'
+    ELSE 'unknown'
+  END as participation_status
+FROM botia.event_invites i
+FULL OUTER JOIN botia.event_registrations r 
+  ON i.contact_id = r.contact_id 
+  AND i.event_session_id = r.event_session_id
+WHERE i.event_session_id = :session_id 
+  OR r.event_session_id = :session_id;
+```
 
 **Response:**
 ```json
+[
+  {
+    "contact_id": "3474",
+    "contact_name": "Orlando Prado",
+    "contact_phone": "+573142376428",
+    "participation_status": "invited_no_response",
+    "invite_status": "rechaza...",
+    "invited_at": "2026-02-03T23:42:03Z",
+    "registration_status": null,
+    "confirmed_at": null,
+    "canceled_at": null,
+    "attended_at": null,
+    "source": "whatsapp_campaign",
+    "campaign_name": "Webinar en vivo"
+  }
+]
+```
+
+**Casos Cubiertos:**
+- ✅ Usuario invitado sin respuesta (solo en `event_invites`)
+- ✅ Usuario invitado que respondió (ambas tablas)
+- ✅ 3. `GET /api/bots/{bot_id}/event_sessions/{session_id}/stats`
+
+**Descripción**: Obtener estadísticas de una sesión con datos consolidados.
+
+**Lógica Mejorada:**
+```sql
+-- Contar invitaciones
+total_invited = COUNT(DISTINCT event_invites.contact_id)
+
+-- Contar respuestas por estado
+pre_registro = COUNT(event_registrations WHERE status ILIKE 'pre%')
+confirmado = COUNT(event_registrations WHERE status ILIKE 'confirm%')
+asistio = COUNT(event_registrations WHERE status ILIKE 'attended%' OR status ILIKE 'asist%')
+no_show = COUNT(event_registrations WHERE status ILIKE 'no_show%')
+cancelado = COUNT(event_registrations WHERE status ILIKE 'cancel%')
+
+-- Invitados sin respuesta
+sin_respuesta = total_invited - COUNT(event_registrations)
+```
+
+**Response Mejorado:**
+```json
+{
+  "session_id": 3,
+  "session_name": "Workshop de casos 3D",
+  "event_id": 5,
+  "event_title": "Webinar en vivo",
+  "start_at": "2026-03-28T19:00:00Z",
+  "end_at": "2026-03-28T21:00:00Z",
+  "is_past": false,
+  "stats": {
+    "total_invited": 1,
+    "sin_respuesta": 1,
+    "pre_registro": 0,
+    "confirmado": 0,
+    "asistio": 0,
+    "no_show": 0,
+    4cancelado": 0,
+    "tasa_respuesta": "0%"
+  },
+  "invites_summary": {
+    "sent": 1,
+    "delivered": 1,
+    "read": 1,
+    "rejected": 1,
+    "failed": 0
+  }json
 {
   "event_id": 5,
   "event_title": "Webinar en vivo",
@@ -170,7 +297,7 @@ CREATE TABLE botia.event_registrations (
 ```json
 {
   "id": 123,
-  "event_session_id": 10,
+  "e5ent_session_id": 10,
   "contact_id": "3474",
   "registration_status": "CONFIRMADO",
   "confirmed_at": "2026-02-04T10:30:00Z",
@@ -197,7 +324,7 @@ CREATE TABLE botia.event_registrations (
 }
 ```
 
-**Response:**
+**Re6ponse:**
 ```json
 {
   "updated": 3,
@@ -342,15 +469,21 @@ El frontend normaliza automáticamente todos los formatos de estado:
 
 ## 🧪 Endpoints a Implementar (Prioridad)
 
-| Endpoint | Prioridad | Complejidad | Tiempo Est. |
-|----------|-----------|-------------|-------------|
-| `GET /events/{id}/stats` | Alta | Media | 2h |
-| `GET /event_sessions/{id}/stats` | Alta | Media | 2h |
-| `PATCH /registrations/{id}/status` | Media | Baja | 1h |
-| `POST /sessions/{id}/bulk-mark-attendance` | Media | Media | 1.5h |
-| `GET /event_registrations/export` | Baja | Media | 2h |
+| Endpoint | Prioridad | Complejidad | Tiempo Est. | Bloqueante |
+|----------|-----------|-------------|-------------|------------|
+| `GET /sessions/{id}/invites-and-registrations` | **CRÍTICA** | Alta | 3h | ✅ SÍ |
+| `GET /event_sessions/{id}/stats` | **CRÍTICA** | Alta | 2.5h | ✅ SÍ |
+| `GET /events/{id}/stats` | Alta | Media | 2h | No |
+| `PATCH /registrations/{id}/status` | Media | Baja | 1h | No |
+| `POST /sessions/{id}/bulk-mark-attendance` | Media | Media | 1.5h | No |
+| `GET /event_registrations/export` | Baja | Media | 2h | No |
 
-**Total estimado**: ~8.5 horas de desarrollo backend
+**Total estimado**: ~12 horas de desarrollo backend
+
+### 🔥 Bloqueantes Críticos (Implementar PRIMERO)
+
+1. **`/invites-and-registrations`**: Sin este endpoint, el monitor no muestra invitados sin respuesta
+2. **`/stats` mejorado**: Estadísticas actuales están incorrectas (ignoran invitaciones)
 
 ---
 
@@ -360,24 +493,133 @@ El frontend normaliza automáticamente todos los formatos de estado:
 - [x] Nueva pestaña "Monitor de Eventos"
 - [x] Selector de Evento/Sesión
 - [x] Detección de evento pasado vs futuro
-- [x] 6 tarjetas de estadísticas
-- [x] Tabla de registros con colores
-- [x] Botón refrescar
-- [x] Traducciones ES/EN
+- [x] 6 tarjeEn Desarrollo)
+- [x] Endpoint GET `/event_registrations` ✅ Existe (incompleto)
+- [x] Endpoint GET `/event_invites` ✅ Existe
+- [ ] 🔥 Endpoint GET `/invites-and-registrations` ⏳ **CRÍTICO**
+- [ ] 🔥 Endpoint GET `/event_sessions/{id}/stats` ⏳ **CRÍTICO**
+- [ ] Endpoint GET `/event
 - [x] Integración con contactos
 
 ### Backend (Pendiente)
 - [x] Endpoint GET `/event_registrations` ✅ Ya existe
-- [ ] Endpoint GET `/events/{id}/stats` ⏳
-- [ ] Endpoint GET `/event_sessions/{id}/stats` ⏳
-- [ ] Endpoint PATCH `/registrations/{id}/status` ⏳
-- [ ] Endpoint POST `/bulk-mark-attendance` ⏳
-- [ ] Endpoint GET `/registrations/export` ⏳
+- [ ] Elan de Implementación Backend
+
+### Fase 1: Crítico (Bloqueantes - 5.5h)
+1. **Crear `/invites-and-registrations`** (3h)
+   - Query SQL con FULL OUTER JOIN
+   - Resolver nombres de contactos
+   - Determinar `participation_status`
+   - Normalizar estados a español/mayúsculas
+
+2. **Mejorar `/event_sessions/{id}/stats`** (2.5h)
+   - Integrar conteo de `event_invites`
+   - Calcular `sin_respuesta = invited - registrations`
+   - Agregar `invites_summary` con estados de envío
+   - Calcular `tasa_respuesta`
+
+### Fase 2: Alta Prioridad (4h)
+3. **Crear `/events/{id}/stats`** (2h)
+   - Agregación multi-sesión
+   - Estadísticas consolidadas por evento
+
+4. **Crear `PATCH /registrations/{id}/status`** (1h)
+   - Actualizar estado manualmente
+   - Auto-actualizar timestamps
+
+5. **Crear `POST /bulk-mark-attendance`** (1h)
+   - Marcar asistencia masiva
+
+### Fase 3: Mejoras (2h)
+6. **Crear `/registrations/export`** (2h)
+   - Exportar CSV con datos consolidados
 
 ---
 
-## 🚀 Próximos Pasos
+## 📋 Resumen de Cambios Necesarios
 
+### SQL a Implementar
+
+```sql
+-- Vista consolidada recomendada
+CREATE VIEW v_event_participation AS
+SELECT 
+  s.id as session_id,
+  s.event_id,
+  COALESCE(i.contact_id, r.contact_id) as contact_id,
+  i.phone_number,
+  i.campaign_name,
+  i.channel as invite_channel,
+  i.status as invite_status,
+  i.sent_at as invited_at,
+  r.registration_status,
+  r.registered_at,
+  r.confirmed_at,
+  r.canceled_at,
+  r.attended_at,
+  r.source as registration_source,
+  CASE 
+    WHEN r.registration_status ILIKE '%cancel%' THEN 'cancelado'
+    WHEN r.registration_status ILIKE '%confirm%' THEN 'confirmado'
+    WHEN r.registration_status ILIKE '%asist%' OR r.registration_status ILIKE '%attend%' THEN 'asistio'
+    WHEN r.registration_status ILIKE '%no_show%' THEN 'no_show'
+    WHEN r.registration_status ILIKE '%pre%' THEN 'pre_registro'
+    WHEN r.id IS NOT NULL THEN 'registrado'
+    WHEN i.id IS NOT NULL THEN 'invitado_sin_respuesta'
+    ELSE 'desconocido'
+  END as participation_status
+FROM botia.event_sessions s
+LEFT JOIN botia.event_invites i ON i.event_session_id = s.id
+LEFT JOIN botia.event_registrations r 
+  ON r.event_session_id = s.id 
+  AND r.contact_id = i.contact_id;
+```
+
+### Ejemplo de Response Correcto
+
+**Caso Actual (Problema):**
+```
+Session ID: 3
+GET /event_registrations?event_session_id=3 → []
+Monitor muestra: Total Invitados: 0
+```
+
+**Caso Corregido (Solución):**
+```
+Session ID: 3
+GET /invites-and-registrations/3 → [
+  {
+    "contact_id": "3474",
+    "contact_name": "Orlando Prado",
+    "contact_phone": "+573142376428",
+    "participation_status": "invitado_sin_respuesta",
+    "invite_status": "rechaza...",
+    "invited_at": "2026-02-03T23:42:03Z",
+    "registration_status": null
+  }
+]
+Monitor muestra: Total Invitados: 1
+```
+
+---
+
+## 🎯 Resultado Esperado
+
+### Vista Monitor Correcta
+- ✅ **Total Invitados: 1** (cuenta `event_invites`)
+- ✅ **Sin Respuesta: 1** (invitados que no respondieron)
+- ✅ **Pre-registrados: 0**
+- ✅ **Confirmados: 0**
+- ✅ **Cancelados: 0**
+- ✅ **Asistieron: 0**
+
+### Métricas de Negocio
+- **Tasa de Respuesta**: 0% (0 respuestas / 1 invitado)
+- **Tasa de Confirmación**: N/A (ninguno confirmó)
+- **Alcance Total**: 1 contacto
+- **Estado de Invitación**: "rechaza..." (visible en lista)
+
+¡El frontend ya está listo y esperando estos endpoints
 1. **Implementar endpoints de estadísticas** (`/stats`)
 2. **Implementar actualización de estado** (`PATCH`)
 3. **Implementar asistencia masiva** (bulk)

@@ -73,6 +73,7 @@ export class NotificationsComponent {
   isCampaignLoading = signal(false);
   isExecuting = signal(false);
   isAiSuggesting = signal(false);
+  isRefreshingQueue = signal(false);
   
   // Add Contacts Modal State
   addContactsModalTab = signal<'manual' | 'segmentation'>('manual');
@@ -798,8 +799,13 @@ export class NotificationsComponent {
           this.selectedCampaign.update(c => c ? { ...c, status: newStatus } : null);
           this.campaigns.update(cs => cs.map(c => c.id === campaign.id ? { ...c, status: newStatus } : c));
         }
+        
+        // Switch to queue view and refresh
         this.activeSubView.set('queue');
+        this.isRefreshingQueue.set(true);
+        this.toastService.showInfo(this.languageService.T('updatingQueue'));
         this.queueItems.set(await this.dataService.getNotificationQueue(this.botId()));
+        this.isRefreshingQueue.set(false);
 
     } catch(e) {
         this.toastService.showError(this.languageService.T('campaignExecutionError'));
@@ -825,7 +831,11 @@ export class NotificationsComponent {
           .replace('{sent}', String(sent))
           .replace('{failed}', String(failed))
       );
+      
+      // Refresh queue with visual feedback
+      this.isRefreshingQueue.set(true);
       this.queueItems.set(await this.dataService.getNotificationQueue(this.botId()));
+      this.isRefreshingQueue.set(false);
     } catch (e) {
       this.toastService.showError(this.languageService.T('campaignDispatchError'));
     } finally {

@@ -667,6 +667,8 @@ export const es = {
   refresh: 'Actualizar',
   queueRefreshed: 'Cola de envíos actualizada.',
   queueRefreshError: 'Error al actualizar la cola de envíos.',
+  updatingQueue: 'Actualizando cola de envíos...',
+  updating: 'Actualizando...',
   dataRefreshed: 'Datos actualizados correctamente.',
   refreshError: 'Error al actualizar los datos.',
   autoFillWithAI: 'Autocompletar con IA',
