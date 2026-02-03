@@ -666,6 +666,8 @@ export const es = {
   refresh: 'Actualizar',
   queueRefreshed: 'Cola de envíos actualizada.',
   queueRefreshError: 'Error al actualizar la cola de envíos.',
+  dataRefreshed: 'Datos actualizados correctamente.',
+  refreshError: 'Error al actualizar los datos.',
   noContactsInCampaign: 'Aún no se han añadido contactos a esta campaña.',
   searchContacts: 'Buscar contactos...',
   addSelectedContacts: 'Añadir Contactos Seleccionados',

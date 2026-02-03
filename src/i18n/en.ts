@@ -665,6 +665,8 @@ export const en = {
   refresh: 'Refresh',
   queueRefreshed: 'Queue refreshed successfully.',
   queueRefreshError: 'Failed to refresh queue.',
+  dataRefreshed: 'Data refreshed successfully.',
+  refreshError: 'Failed to refresh data.',
   noContactsInCampaign: 'No contacts have been added to this campaign yet.',
   searchContacts: 'Search contacts...',
   addSelectedContacts: 'Add Selected Contacts',

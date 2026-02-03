@@ -139,9 +139,12 @@ export class NotificationsComponent {
 
   availableContactFields = computed(() => {
     const contacts = this.allBotContacts();
+    if (!contacts || contacts.length === 0) {
+      return ['name', 'phone_number', 'email']; // Valores por defecto
+    }
     const fields = new Set<string>(['name', 'phone_number', 'email']);
     contacts.forEach(c => {
-      if (c.attributes) {
+      if (c.attributes && typeof c.attributes === 'object') {
         Object.keys(c.attributes).forEach(k => fields.add(k));
       }
     });
@@ -202,6 +205,29 @@ export class NotificationsComponent {
     this.queueItems.set(queue);
     this.events.set(events);
     this.isLoading.set(false);
+  }
+
+  async refreshCampaignData() {
+    this.isCampaignLoading.set(true);
+    try {
+      const campaigns = await this.dataService.getCampaigns(this.botId());
+      this.campaigns.set(campaigns);
+      
+      // Si hay una campaña seleccionada, recargarla
+      const current = this.selectedCampaign();
+      if (current) {
+        const updated = campaigns.find(c => c.id === current.id);
+        if (updated) {
+          await this.selectCampaign(updated);
+        }
+      }
+      
+      this.toastService.showSuccess(this.languageService.T('dataRefreshed'));
+    } catch(e) {
+      this.toastService.showError(this.languageService.T('refreshError'));
+    } finally {
+      this.isCampaignLoading.set(false);
+    }
   }
 
   async changeSubView(view: NotificationSubView) {
@@ -474,13 +500,19 @@ export class NotificationsComponent {
     
     try {
       const newCampaign = await this.dataService.createCampaign(this.botId(), { name: campaignData.name, template_id: campaignData.template_id, event_id: campaignData.event_id, event_session_id: campaignData.event_session_id });
-      // Update campaigns list immediately
-      this.campaigns.update(c => [...c, newCampaign]);
+      
+      // Get full campaign details from backend including template_name
+      const fullCampaignList = await this.dataService.getCampaigns(this.botId());
+      this.campaigns.set(fullCampaignList);
+      
       this.toastService.showSuccess(this.languageService.T('saveSuccess'));
       this.closeModal();
       
-      // Select the new campaign so the view switches automatically
-      await this.selectCampaign(newCampaign);
+      // Find and select the newly created campaign
+      const createdCampaign = fullCampaignList.find(c => c.id === newCampaign.id);
+      if (createdCampaign) {
+        await this.selectCampaign(createdCampaign);
+      }
     } catch (e) {
       this.toastService.showError(this.languageService.T('saveError'));
     }
@@ -637,6 +669,9 @@ export class NotificationsComponent {
     try {
       await this.dataService.updateCampaignParameters(this.botId(), campaign.id, parametersToSave);
       this.toastService.showSuccess(this.languageService.T('saveSuccess'));
+      
+      // Recargar la campaña completa para actualizar el estado y activar botón
+      await this.selectCampaign(campaign);
     } catch (e) {
       this.toastService.showError(this.languageService.T('saveError'));
     }
