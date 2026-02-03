@@ -46,21 +46,33 @@ CREATE TABLE botia.event_registrations (
     "contact_id": "3474",
     "account_tier": "standard",
     "source": "whatsapp_campaign",
-    "registration_status": "PRE_REGISTRO",
+    "registration_status": "canceled",
     "registered_at": "2026-02-03T21:50:33.502313Z",
     "confirmed_at": null,
-    "canceled_at": null,
+    "canceled_at": "2026-02-03T23:03:35.014495Z",
     "attended_at": null,
     "notes": null,
     "utm_campaign": "Webinar en vivo",
     "utm_source": null,
     "created_at": "2026-02-03T21:50:33.502313Z",
-    "updated_at": "2026-02-03T21:50:33.502313Z"
+    "updated_at": "2026-02-03T23:03:35.014495Z"
   }
 ]
 ```
 
 ✅ **Este endpoint ya existe y funciona correctamente.**
+
+⚠️ **Nota Importante sobre Estados**: El backend devuelve estados en minúsculas inglés (`"canceled"`, `"confirmed"`, etc.), pero el frontend ha sido actualizado para normalizarlos automáticamente a formato español mayúsculas (`"CANCELADO"`, `"CONFIRMADO"`, etc.) para una mejor experiencia de usuario.
+
+### Mapeo de Estados Backend → Frontend
+
+| Backend (API) | Frontend (UI) | Traducción ES |
+|---------------|---------------|---------------|
+| `canceled` / `cancelado` | `CANCELADO` | Cancelado |
+| `confirmed` / `confirmado` | `CONFIRMADO` | Confirmado |
+| `pre_registro` | `PRE_REGISTRO` | Pre-registro |
+| `attended` / `asistio` | `ASISTIO` | Asistió |
+| `no_show` | `NO_SHOW` | No Asistió |
 
 ---
 
@@ -271,6 +283,8 @@ El frontend ahora incluye:
 - ✅ Badges de color según estado de inscripción
 - ✅ Botón "Actualizar" para refrescar datos
 - ✅ Integración con sistema de contactos existente
+- ✅ **Normalización automática de estados del backend**
+- ✅ **Formateo inteligente de fuentes de registro**
 
 ### Estados Visuales
 - **Amarillo**: PRE_REGISTRO
@@ -278,6 +292,22 @@ El frontend ahora incluye:
 - **Verde**: ASISTIO
 - **Rojo**: NO_SHOW
 - **Gris**: CANCELADO
+
+### Formateo de Fuentes
+El campo `source` se muestra en español:
+- `whatsapp_campaign` → "Campaña WhatsApp"
+- `manual` → "Manual"
+- `web_form` → "Formulario Web"
+- `api` → "API"
+- `import` → "Importación"
+- `null` / vacío → "Manual" (por defecto)
+
+### Normalización de Estados
+El frontend normaliza automáticamente todos los formatos de estado:
+- Convierte minúsculas a MAYÚSCULAS
+- Traduce inglés a español
+- Maneja variantes (`canceled`, `cancelled`, `cancelado` → `CANCELADO`)
+- Cuenta correctamente en estadísticas agregadas
 
 ---
 

@@ -241,11 +241,11 @@ export class ProgramsEventsComponent {
     const registrations = this.monitorRegistrations();
     return {
       total: registrations.length,
-      preRegistro: registrations.filter(r => r.registration_status === 'PRE_REGISTRO').length,
-      confirmado: registrations.filter(r => r.registration_status === 'CONFIRMADO').length,
-      asistio: registrations.filter(r => r.registration_status === 'ASISTIO').length,
-      noShow: registrations.filter(r => r.registration_status === 'NO_SHOW').length,
-      cancelado: registrations.filter(r => r.registration_status === 'CANCELADO').length,
+      preRegistro: registrations.filter(r => this.normalizeRegistrationStatus(r.registration_status) === 'PRE_REGISTRO').length,
+      confirmado: registrations.filter(r => this.normalizeRegistrationStatus(r.registration_status) === 'CONFIRMADO').length,
+      asistio: registrations.filter(r => this.normalizeRegistrationStatus(r.registration_status) === 'ASISTIO').length,
+      noShow: registrations.filter(r => this.normalizeRegistrationStatus(r.registration_status) === 'NO_SHOW').length,
+      cancelado: registrations.filter(r => this.normalizeRegistrationStatus(r.registration_status) === 'CANCELADO').length,
     };
   });
 
@@ -270,6 +270,37 @@ export class ProgramsEventsComponent {
       name: contact?.name || 'Desconocido',
       phone: contact?.phone_number || contactId
     };
+  }
+
+  // Normalize registration status from backend (lowercase English) to expected format (uppercase Spanish)
+  normalizeRegistrationStatus(status: string): string {
+    const statusMap: Record<string, string> = {
+      'pre_registro': 'PRE_REGISTRO',
+      'pre-registro': 'PRE_REGISTRO',
+      'confirmado': 'CONFIRMADO',
+      'confirmed': 'CONFIRMADO',
+      'asistio': 'ASISTIO',
+      'attended': 'ASISTIO',
+      'no_show': 'NO_SHOW',
+      'no-show': 'NO_SHOW',
+      'cancelado': 'CANCELADO',
+      'canceled': 'CANCELADO',
+      'cancelled': 'CANCELADO'
+    };
+    return statusMap[status.toLowerCase()] || status.toUpperCase();
+  }
+
+  // Format source for display
+  formatSource(source: string | null): string {
+    if (!source) return 'Manual';
+    const sourceMap: Record<string, string> = {
+      'whatsapp_campaign': 'Campaña WhatsApp',
+      'manual': 'Manual',
+      'web_form': 'Formulario Web',
+      'api': 'API',
+      'import': 'Importación'
+    };
+    return sourceMap[source] || source;
   }
 
   formatDate(iso?: string | null): string {

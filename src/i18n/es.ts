@@ -817,4 +817,14 @@ export const es = {
   registrationStatus_ASISTIO: 'Asistió',
   registrationStatus_NO_SHOW: 'No Asistió',
   registrationStatus_CANCELADO: 'Cancelado',
+  // Backend alternatives (lowercase/English)
+  registrationStatus_pre_registro: 'Pre-registro',
+  registrationStatus_confirmado: 'Confirmado',
+  registrationStatus_confirmed: 'Confirmado',
+  registrationStatus_asistio: 'Asistió',
+  registrationStatus_attended: 'Asistió',
+  registrationStatus_no_show: 'No Asistió',
+  registrationStatus_cancelado: 'Cancelado',
+  registrationStatus_canceled: 'Cancelado',
+  registrationStatus_cancelled: 'Cancelado',
 };

@@ -814,5 +814,13 @@ export const en = {
   registrationStatus_CONFIRMADO: 'Confirmed',
   registrationStatus_ASISTIO: 'Attended',
   registrationStatus_NO_SHOW: 'No Show',
-  registrationStatus_CANCELADO: 'Canceled',
-};
+  registrationStatus_CANCELADO: 'Canceled',  // Backend alternatives
+  registrationStatus_pre_registro: 'Pre-registration',
+  registrationStatus_confirmado: 'Confirmed',
+  registrationStatus_confirmed: 'Confirmed',
+  registrationStatus_asistio: 'Attended',
+  registrationStatus_attended: 'Attended',
+  registrationStatus_no_show: 'No Show',
+  registrationStatus_cancelado: 'Canceled',
+  registrationStatus_canceled: 'Canceled',
+  registrationStatus_cancelled: 'Canceled',};

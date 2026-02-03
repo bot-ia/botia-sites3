@@ -339,31 +339,32 @@
                                     <div class="text-sm text-slate-500 dark:text-slate-400">{{ contact.phone }}</div>
                                   </td>
                                   <td class="p-3">
+                                    @let normalizedStatus = normalizeRegistrationStatus(registration.registration_status);
                                     <span class="px-2 py-1 rounded-full text-xs font-medium"
-                                      [class.bg-yellow-100]="registration.registration_status === 'PRE_REGISTRO'"
-                                      [class.text-yellow-800]="registration.registration_status === 'PRE_REGISTRO'"
-                                      [class.dark:bg-yellow-900/50]="registration.registration_status === 'PRE_REGISTRO'"
-                                      [class.dark:text-yellow-300]="registration.registration_status === 'PRE_REGISTRO'"
-                                      [class.bg-blue-100]="registration.registration_status === 'CONFIRMADO'"
-                                      [class.text-blue-800]="registration.registration_status === 'CONFIRMADO'"
-                                      [class.dark:bg-blue-900/50]="registration.registration_status === 'CONFIRMADO'"
-                                      [class.dark:text-blue-300]="registration.registration_status === 'CONFIRMADO'"
-                                      [class.bg-green-100]="registration.registration_status === 'ASISTIO'"
-                                      [class.text-green-800]="registration.registration_status === 'ASISTIO'"
-                                      [class.dark:bg-green-900/50]="registration.registration_status === 'ASISTIO'"
-                                      [class.dark:text-green-300]="registration.registration_status === 'ASISTIO'"
-                                      [class.bg-red-100]="registration.registration_status === 'NO_SHOW'"
-                                      [class.text-red-800]="registration.registration_status === 'NO_SHOW'"
-                                      [class.dark:bg-red-900/50]="registration.registration_status === 'NO_SHOW'"
-                                      [class.dark:text-red-300]="registration.registration_status === 'NO_SHOW'"
-                                      [class.bg-slate-100]="registration.registration_status === 'CANCELADO'"
-                                      [class.text-slate-800]="registration.registration_status === 'CANCELADO'"
-                                      [class.dark:bg-slate-900/50]="registration.registration_status === 'CANCELADO'"
-                                      [class.dark:text-slate-300]="registration.registration_status === 'CANCELADO'">
-                                      {{ languageService.T('registrationStatus_' + registration.registration_status) }}
+                                      [class.bg-yellow-100]="normalizedStatus === 'PRE_REGISTRO'"
+                                      [class.text-yellow-800]="normalizedStatus === 'PRE_REGISTRO'"
+                                      [class.dark:bg-yellow-900/50]="normalizedStatus === 'PRE_REGISTRO'"
+                                      [class.dark:text-yellow-300]="normalizedStatus === 'PRE_REGISTRO'"
+                                      [class.bg-blue-100]="normalizedStatus === 'CONFIRMADO'"
+                                      [class.text-blue-800]="normalizedStatus === 'CONFIRMADO'"
+                                      [class.dark:bg-blue-900/50]="normalizedStatus === 'CONFIRMADO'"
+                                      [class.dark:text-blue-300]="normalizedStatus === 'CONFIRMADO'"
+                                      [class.bg-green-100]="normalizedStatus === 'ASISTIO'"
+                                      [class.text-green-800]="normalizedStatus === 'ASISTIO'"
+                                      [class.dark:bg-green-900/50]="normalizedStatus === 'ASISTIO'"
+                                      [class.dark:text-green-300]="normalizedStatus === 'ASISTIO'"
+                                      [class.bg-red-100]="normalizedStatus === 'NO_SHOW'"
+                                      [class.text-red-800]="normalizedStatus === 'NO_SHOW'"
+                                      [class.dark:bg-red-900/50]="normalizedStatus === 'NO_SHOW'"
+                                      [class.dark:text-red-300]="normalizedStatus === 'NO_SHOW'"
+                                      [class.bg-slate-100]="normalizedStatus === 'CANCELADO'"
+                                      [class.text-slate-800]="normalizedStatus === 'CANCELADO'"
+                                      [class.dark:bg-slate-900/50]="normalizedStatus === 'CANCELADO'"
+                                      [class.dark:text-slate-300]="normalizedStatus === 'CANCELADO'">
+                                      {{ languageService.T('registrationStatus_' + normalizedStatus) }}
                                     </span>
                                   </td>
-                                  <td class="p-3 text-sm text-slate-600 dark:text-slate-300">{{ registration.source || '—' }}</td>
+                                  <td class="p-3 text-sm text-slate-600 dark:text-slate-300">{{ formatSource(registration.source) }}</td>
                                   <td class="p-3 text-sm text-slate-600 dark:text-slate-300">{{ formatDate(registration.registered_at) }}</td>
                                 </tr>
                               }
