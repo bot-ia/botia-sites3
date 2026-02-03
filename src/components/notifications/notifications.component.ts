@@ -158,6 +158,21 @@ export class NotificationsComponent {
   ];
   readonly paymentStatuses: PaymentStatus[] = ['pendiente', 'pagado'];
   readonly confirmationStatuses: ConfirmationStatus[] = ['agendada', 'confirmada', 'realizada', 'cancelada'];
+  
+  readonly eventFields = [
+    { key: 'event.title', label: 'Evento: Título' },
+    { key: 'event.description', label: 'Evento: Descripción' },
+    { key: 'event.brand', label: 'Evento: Marca' },
+    { key: 'event.topic', label: 'Evento: Tema' },
+    { key: 'session.name', label: 'Sesión: Nombre' },
+    { key: 'session.start_at', label: 'Sesión: Fecha/Hora Inicio' },
+    { key: 'session.end_at', label: 'Sesión: Fecha/Hora Fin' },
+    { key: 'session.location_name', label: 'Sesión: Ubicación (Lugar)' },
+    { key: 'session.location_address', label: 'Sesión: Dirección' },
+    { key: 'session.meeting_link', label: 'Sesión: Link Reunión' },
+    { key: 'session.speaker_name', label: 'Sesión: Speaker' },
+    { key: 'session.time_zone', label: 'Sesión: Zona Horaria' }
+  ];
 
   constructor() {
     effect(() => {
@@ -459,10 +474,13 @@ export class NotificationsComponent {
     
     try {
       const newCampaign = await this.dataService.createCampaign(this.botId(), { name: campaignData.name, template_id: campaignData.template_id, event_id: campaignData.event_id, event_session_id: campaignData.event_session_id });
-      this.campaigns.set(await this.dataService.getCampaigns(this.botId()));
+      // Update campaigns list immediately
+      this.campaigns.update(c => [...c, newCampaign]);
       this.toastService.showSuccess(this.languageService.T('saveSuccess'));
       this.closeModal();
-      this.selectCampaign(newCampaign);
+      
+      // Select the new campaign so the view switches automatically
+      await this.selectCampaign(newCampaign);
     } catch (e) {
       this.toastService.showError(this.languageService.T('saveError'));
     }
@@ -590,10 +608,15 @@ export class NotificationsComponent {
     const payload = contactsToAdd.map(c => ({ phone_number: c.phone_number, params: c.params }));
 
     try {
-        await this.dataService.addContactsToCampaign(this.botId(), campaign.id, payload);
+        const result = await this.dataService.addContactsToCampaign(this.botId(), campaign.id, payload);
         this.toastService.showSuccess(this.languageService.T('addContactsSuccess'));
         this.closeModal();
-        this.selectCampaign(campaign);
+        
+        // Refresh campaign data immediately
+        await this.selectCampaign(campaign);
+        // Also update the main list count if needed (optional since detail view is authoritative)
+        this.campaigns.update(cs => cs.map(c => c.id === campaign.id ? { ...c, total_contacts: c.total_contacts + payload.length } : c));
+        
     } catch (e) {
         this.toastService.showError(this.languageService.T('addContactsError'));
     }
@@ -734,7 +757,7 @@ export class NotificationsComponent {
         return { ...c, contacts: updatedContacts };
       });
       this.campaigns.update(cs => cs.map(c => 
-          c.id === campaign.id ? { ...c, total_contacts: c.total_contacts - 1 } : c
+          c.id === campaign.id ? { ...c, total_contacts: Math.max(0, c.total_contacts - 1) } : c
       ));
 
     } catch (e) {

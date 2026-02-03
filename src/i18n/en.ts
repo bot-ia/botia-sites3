@@ -675,6 +675,7 @@ export const en = {
   saveParameters: 'Save Parameters',
   assignType_fixed: 'Fixed Value',
   assignType_contact_field: 'Contact Field',
+  assignType_event_field: 'Event Field',
   assignValue_name: 'Name',
   assignValue_phone_number: 'Phone Number',
   assignValue_email: 'Email',

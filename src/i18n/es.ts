@@ -676,6 +676,7 @@ export const es = {
   saveParameters: 'Guardar Parámetros',
   assignType_fixed: 'Valor Fijo',
   assignType_contact_field: 'Campo del Contacto',
+  assignType_event_field: 'Campo del Evento',
   assignValue_name: 'Nombre',
   assignValue_phone_number: 'Número de Teléfono',
   assignValue_email: 'Email',

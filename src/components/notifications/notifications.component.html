@@ -232,6 +232,7 @@
                                     <option [ngValue]="undefined" disabled>{{ languageService.T('assignedType') }}</option>
                                     <option value="fixed_value">{{ languageService.T('assignType_fixed') }}</option>
                                     <option value="contact_field">{{ languageService.T('assignType_contact_field') }}</option>
+                                    <option value="event_field">{{ languageService.T('assignType_event_field') }}</option>
                                   </select>
                                   @if(param.assign_type === 'fixed_value') {
                                     <input type="text" [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600" [placeholder]="languageService.T('enterValue')">
@@ -240,6 +241,13 @@
                                       <option [ngValue]="undefined" disabled>{{ languageService.T('selectField') }}</option>
                                       @for(field of availableContactFields(); track field) {
                                         <option [value]="field">{{ field }}</option>
+                                      }
+                                    </select>
+                                  } @else if (param.assign_type === 'event_field') {
+                                     <select [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600">
+                                      <option [ngValue]="undefined" disabled>{{ languageService.T('selectField') }}</option>
+                                      @for(field of eventFields; track field.key) {
+                                        <option [value]="field.key">{{ field.label }}</option>
                                       }
                                     </select>
                                   } @else {

@@ -319,7 +319,7 @@ export interface TemplateParameter {
   param_key: string;
   param_name?: string;
   param_example?: string;
-  assign_type?: 'fixed_value' | 'contact_field';
+  assign_type?: 'fixed_value' | 'contact_field' | 'event_field';
   assign_value?: string;
 }
 
