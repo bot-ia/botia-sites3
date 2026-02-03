@@ -72,6 +72,7 @@ export class NotificationsComponent {
   selectedCampaign = signal<CampaignDetails | null>(null);
   isCampaignLoading = signal(false);
   isExecuting = signal(false);
+  isAiSuggesting = signal(false);
   
   // Add Contacts Modal State
   addContactsModalTab = signal<'manual' | 'segmentation'>('manual');
@@ -674,6 +675,78 @@ export class NotificationsComponent {
       await this.selectCampaign(campaign);
     } catch (e) {
       this.toastService.showError(this.languageService.T('saveError'));
+    }
+  }
+
+  async autoFillParametersWithAI() {
+    const campaign = this.selectedCampaign();
+    if (!campaign?.template?.parameters) return;
+
+    this.isAiSuggesting.set(true);
+    
+    try {
+      // Preparar datos del evento y sesión
+      const event = campaign.event_id ? this.events().find(e => e.id === campaign.event_id) : null;
+      const session = campaign.event_session_id ? this.eventSessions().find(s => s.id === campaign.event_session_id) : null;
+
+      const payload = {
+        parameters: campaign.template.parameters.map(p => ({
+          param_index: p.param_index,
+          param_name: p.param_name || `param_${p.param_index}`,
+          param_example: p.param_example
+        })),
+        available_contact_fields: this.availableContactFields(),
+        event_data: event ? {
+          title: event.title,
+          description: event.description,
+          brand: event.brand,
+          topic: event.topic
+        } : undefined,
+        session_data: session ? {
+          name: session.name,
+          start_at: session.start_at,
+          end_at: session.end_at,
+          location_name: session.location_name,
+          location_address: session.location_address,
+          meeting_link: session.meeting_link,
+          speaker_name: session.speaker_name
+        } : undefined
+      };
+
+      const response = await this.dataService.suggestParameterMappings(this.botId(), payload);
+
+      // Aplicar las sugerencias
+      if (response.suggestions && response.suggestions.length > 0) {
+        this.selectedCampaign.update(c => {
+          if (!c?.template?.parameters) return c;
+          
+          const updatedParams = c.template.parameters.map(param => {
+            const suggestion = response.suggestions.find(s => s.param_index === param.param_index);
+            if (suggestion) {
+              return {
+                ...param,
+                assign_type: suggestion.assign_type as any,
+                assign_value: suggestion.assign_value
+              };
+            }
+            return param;
+          });
+
+          return {
+            ...c,
+            template: { ...c.template, parameters: updatedParams }
+          };
+        });
+
+        this.toastService.showSuccess(this.languageService.T('aiSuggestionsApplied'));
+      } else {
+        this.toastService.showError(this.languageService.T('noAiSuggestions'));
+      }
+    } catch (e: any) {
+      console.error('Error en AI suggestions:', e);
+      this.toastService.showError(this.languageService.T('aiSuggestionsError'));
+    } finally {
+      this.isAiSuggesting.set(false);
     }
   }
 

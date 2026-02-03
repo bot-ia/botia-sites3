@@ -429,4 +429,14 @@ export class DataService {
     const params = new HttpParams().set('limit', limit.toString());
     return this.get<NotificationQueueItem[]>(`${this.apiService.baseUrl}/bots/${botId}/notifications/queue/pending`, [], params);
   }
+
+  // AI-POWERED PARAMETER MAPPING
+  async suggestParameterMappings(botId: string, payload: {
+    parameters: { param_index: number; param_name: string; param_example?: string }[];
+    available_contact_fields: string[];
+    event_data?: { title?: string; description?: string; brand?: string; topic?: string };
+    session_data?: { name?: string; start_at?: string; end_at?: string; location_name?: string; location_address?: string; meeting_link?: string; speaker_name?: string };
+  }): Promise<{ suggestions: { param_index: number; assign_type: string; assign_value: string; reasoning?: string }[] }> {
+    return firstValueFrom(this.http.post<any>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns/suggest-mappings`, payload));
+  }
 }
