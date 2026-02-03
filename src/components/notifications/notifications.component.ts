@@ -137,6 +137,17 @@ export class NotificationsComponent {
     );
   });
 
+  availableContactFields = computed(() => {
+    const contacts = this.allBotContacts();
+    const fields = new Set<string>(['name', 'phone_number', 'email']);
+    contacts.forEach(c => {
+      if (c.attributes) {
+        Object.keys(c.attributes).forEach(k => fields.add(k));
+      }
+    });
+    return Array.from(fields).sort();
+  });
+
   readonly notificationTypes: NotificationType[] = [
     'appointment_reminder', 
     'payment_reminder', 
@@ -147,7 +158,6 @@ export class NotificationsComponent {
   ];
   readonly paymentStatuses: PaymentStatus[] = ['pendiente', 'pagado'];
   readonly confirmationStatuses: ConfirmationStatus[] = ['agendada', 'confirmada', 'realizada', 'cancelada'];
-  readonly contactFields: (keyof Contact)[] = ['name', 'phone_number', 'email'];
 
   constructor() {
     effect(() => {
@@ -530,31 +540,62 @@ export class NotificationsComponent {
     const campaign = this.selectedCampaign();
     const contactIds = this.selectedContactIds();
     const templateParams = campaign?.template?.parameters;
+    
     if (!campaign || contactIds.size === 0) return;
+
+    // 1. Identify which keys are required (mapped to contact_field)
+    const requiredParamKeys: string[] = [];
+    if (templateParams) {
+        templateParams.forEach(p => {
+            if (p.assign_type === 'contact_field' && p.assign_value) {
+                requiredParamKeys.push(p.assign_value);
+            }
+        });
+    }
 
     const contactsToAdd = this.allBotContacts()
         .filter(c => contactIds.has(c.contact_id))
         .map(contact => {
-            const params: { [key: string]: any } = {};
-            if (templateParams) {
-                templateParams.forEach(p => {
-                    if (p.assign_type === 'fixed_value') {
-                        params[p.param_index] = p.assign_value;
-                    } else if (p.assign_type === 'contact_field' && p.assign_value) {
-                        params[p.param_index] = contact[p.assign_value as keyof Contact];
-                    }
-                });
+             // 2. Build full params object including attributes
+            const params: { [key: string]: any } = {
+                name: contact.name,
+                phone: contact.phone_number, 
+                phone_number: contact.phone_number,
+                email: contact.email,
+            };
+            if (contact.attributes) {
+                Object.assign(params, contact.attributes);
             }
-            return { phone_number: contact.phone_number!, params };
+            return { phone_number: contact.phone_number!, params, contactName: contact.name }; 
         });
 
+    // 3. Validation
+    const invalidContacts: string[] = [];
+    contactsToAdd.forEach(c => {
+        const missingKeys = requiredParamKeys.filter(key => 
+            c.params[key] === undefined || c.params[key] === null || c.params[key] === ''
+        );
+        if (missingKeys.length > 0) {
+            invalidContacts.push(`${c.contactName || c.phone_number} (Faltan: ${missingKeys.join(', ')})`);
+        }
+    });
+
+    if (invalidContacts.length > 0) {
+        this.toastService.showError(
+            `No se pueden añadir contactos porque faltan datos requeridos por la plantilla:\n${invalidContacts.slice(0, 3).join('\n')}${invalidContacts.length > 3 ? '...' : ''}`
+        );
+        return;
+    }
+
+    const payload = contactsToAdd.map(c => ({ phone_number: c.phone_number, params: c.params }));
+
     try {
-        await this.dataService.addContactsToCampaign(this.botId(), campaign.id, contactsToAdd);
-        this.toastService.showSuccess('Contacts added successfully.');
+        await this.dataService.addContactsToCampaign(this.botId(), campaign.id, payload);
+        this.toastService.showSuccess(this.languageService.T('addContactsSuccess'));
         this.closeModal();
         this.selectCampaign(campaign);
     } catch (e) {
-        this.toastService.showError('Failed to add contacts.');
+        this.toastService.showError(this.languageService.T('addContactsError'));
     }
   }
 

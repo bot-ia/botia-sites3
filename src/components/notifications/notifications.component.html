@@ -238,8 +238,8 @@
                                   } @else if (param.assign_type === 'contact_field') {
                                     <select [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600">
                                       <option [ngValue]="undefined" disabled>{{ languageService.T('selectField') }}</option>
-                                      @for(field of contactFields; track field) {
-                                        <option [value]="field">{{ languageService.T('assignValue_' + field) }}</option>
+                                      @for(field of availableContactFields(); track field) {
+                                        <option [value]="field">{{ field }}</option>
                                       }
                                     </select>
                                   } @else {
