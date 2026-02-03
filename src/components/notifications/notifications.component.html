@@ -174,7 +174,7 @@
                   <div class="lg:col-span-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-4 flex flex-col">
                     <div class="flex justify-between items-center mb-4">
                       <h3 class="text-xl font-semibold text-slate-800 dark:text-white">{{ languageService.T('assignedContacts') }} ({{ campaign.contacts.length }})</h3>
-                      <button (click)="openAddContactsModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                      <button (click)="openAddContactsModal()" [disabled]="isCampaignFinished()" [title]="isCampaignFinished() ? languageService.T('campaignFinishedTooltip') : ''" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600">
                         <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                         {{ languageService.T('addContacts') }}
                       </button>
@@ -196,7 +196,7 @@
                                 </td>
                                 <td class="p-2"><span class="text-xs px-2 py-1 rounded-full bg-slate-200 dark:bg-slate-700">{{ contact.status }}</span></td>
                                 <td class="p-2 text-right">
-                                  <button (click)="requestRemoveContact(contact)" class="text-red-500 hover:text-red-400 text-sm">
+                                  <button (click)="requestRemoveContact(contact)" [disabled]="isCampaignFinished()" [title]="isCampaignFinished() ? languageService.T('campaignFinishedTooltip') : ''" class="text-red-500 hover:text-red-400 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                     {{ languageService.T('delete') }}
                                   </button>
                                 </td>
@@ -228,7 +228,7 @@
                     <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
                         <div class="flex items-center justify-between mb-4">
                           <h3 class="text-xl font-semibold text-slate-800 dark:text-white">{{ languageService.T('templateParams') }}</h3>
-                          <button (click)="autoFillParametersWithAI()" [disabled]="isAiSuggesting() || !campaign.template?.parameters || campaign.template.parameters.length === 0" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                          <button (click)="autoFillParametersWithAI()" [disabled]="isAiSuggesting() || !campaign.template?.parameters || campaign.template.parameters.length === 0 || isCampaignFinished()" [title]="isCampaignFinished() ? languageService.T('campaignFinishedTooltip') : ''" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
                             @if(isAiSuggesting()) {
                               <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                               {{ languageService.T('aiProcessing') }}
@@ -249,16 +249,16 @@
                                   <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Example: <span class="italic">"{{param.param_example}}"</span></p>
                                 }
                                 <div class="grid grid-cols-2 gap-2 mt-2">
-                                  <select [(ngModel)]="param.assign_type" name="assign_type_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600">
+                                  <select [(ngModel)]="param.assign_type" name="assign_type_{{param.param_index}}" [disabled]="isCampaignFinished()" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option [ngValue]="undefined" disabled>{{ languageService.T('assignedType') }}</option>
                                     <option value="fixed_value">{{ languageService.T('assignType_fixed') }}</option>
                                     <option value="contact_field">{{ languageService.T('assignType_contact_field') }}</option>
                                     <option value="event_field">{{ languageService.T('assignType_event_field') }}</option>
                                   </select>
                                   @if(param.assign_type === 'fixed_value') {
-                                    <input type="text" [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600" [placeholder]="languageService.T('enterValue')">
+                                    <input type="text" [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" [disabled]="isCampaignFinished()" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed" [placeholder]="languageService.T('enterValue')">
                                   } @else if (param.assign_type === 'contact_field') {
-                                    <select [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600">
+                                    <select [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" [disabled]="isCampaignFinished()" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
                                       <option [ngValue]="undefined" disabled>{{ languageService.T('selectField') }}</option>
                                       @if(availableContactFields().length > 0) {
                                         @for(field of availableContactFields(); track field) {
@@ -269,7 +269,7 @@
                                       }
                                     </select>
                                   } @else if (param.assign_type === 'event_field') {
-                                     <select [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600">
+                                     <select [(ngModel)]="param.assign_value" name="assign_value_{{param.param_index}}" [disabled]="isCampaignFinished()" class="bg-slate-100 dark:bg-slate-700 p-2 text-sm rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
                                       <option [ngValue]="undefined" disabled>{{ languageService.T('selectField') }}</option>
                                       @for(field of eventFields; track field.key) {
                                         <option [value]="field.key">{{ field.label }}</option>
@@ -282,7 +282,7 @@
                               </div>
                             }
                           </div>
-                          <button (click)="saveParameterMappings()" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm">{{ languageService.T('saveParameters') }}</button>
+                          <button (click)="saveParameterMappings()" [disabled]="isCampaignFinished()" [title]="isCampaignFinished() ? languageService.T('campaignFinishedTooltip') : ''" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">{{ languageService.T('saveParameters') }}</button>
                         } @else {
                           <p class="text-sm text-slate-500 dark:text-slate-400 italic">{{ languageService.T('templateHasNoParams') }}</p>
                         }

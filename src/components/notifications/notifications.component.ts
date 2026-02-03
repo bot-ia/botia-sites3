@@ -109,6 +109,11 @@ export class NotificationsComponent {
     return hasContacts && allParamsAssigned;
   });
 
+  isCampaignFinished = computed(() => {
+    const campaign = this.selectedCampaign();
+    return campaign ? ['COMPLETED', 'FINISHED'].includes(campaign.status) : false;
+  });
+
   executeButtonState = computed(() => {
     const campaign = this.selectedCampaign();
     if (!campaign || ['RUNNING', 'COMPLETED', 'FINISHED'].includes(campaign.status)) {

@@ -6,7 +6,7 @@ import { LanguageService } from '../../services/language.service';
 import { ToastService } from '../../services/toast.service';
 import { AccountTier, Event, EventAudienceLevel, EventCategory, EventDeliveryMode, EventMessageVariant, EventRegistration, EventSession, EventSessionStatus, EventType } from '../../models';
 
-type ProgramsEventsTab = 'events' | 'sessions' | 'messages' | 'metrics' | 'event_types';
+type ProgramsEventsTab = 'events' | 'sessions' | 'messages' | 'metrics' | 'monitor' | 'event_types';
 
 type DeleteTarget =
   | { type: 'event_type'; item: EventType; label: string }
@@ -39,6 +39,7 @@ export class ProgramsEventsComponent {
   sessions = signal<EventSession[]>([]);
   messageVariants = signal<EventMessageVariant[]>([]);
   registrations = signal<EventRegistration[]>([]);
+  contacts = signal<any[]>([]); // For monitor view
 
   // Filters
   eventSearch = signal('');
@@ -54,6 +55,14 @@ export class ProgramsEventsComponent {
   messageEventFilter = signal<number | 'all'>('all');
 
   metricsEventFilter = signal<number | 'all'>('all');
+
+  // Monitor State
+  monitorEventFilter = signal<number | 'all'>('all');
+  monitorSessionFilter = signal<number | 'all'>('all');
+  selectedEventForMonitor = signal<Event | null>(null);
+  selectedSessionForMonitor = signal<EventSession | null>(null);
+  monitorRegistrations = signal<EventRegistration[]>([]);
+  isLoadingMonitor = signal(false);
 
   // Modal State
   isModalOpen = signal(false);
@@ -126,6 +135,52 @@ export class ProgramsEventsComponent {
     this.registrations.set(await this.dataService.getEventRegistrations(this.botId(), filters));
   }
 
+  // Monitor Methods
+  async selectEventForMonitor(eventId: number) {
+    this.monitorEventFilter.set(eventId);
+    const event = this.events().find(e => e.id === eventId);
+    this.selectedEventForMonitor.set(event ?? null);
+    
+    // Auto-select first session if available
+    const sessions = this.monitorSessions();
+    if (sessions.length > 0) {
+      await this.selectSessionForMonitor(sessions[0].id);
+    } else {
+      this.selectedSessionForMonitor.set(null);
+      this.monitorRegistrations.set([]);
+    }
+  }
+
+  async selectSessionForMonitor(sessionId: number) {
+    this.isLoadingMonitor.set(true);
+    try {
+      this.monitorSessionFilter.set(sessionId);
+      const session = this.sessions().find(s => s.id === sessionId);
+      this.selectedSessionForMonitor.set(session ?? null);
+      
+      // Load registrations for this session
+      const registrations = await this.dataService.getEventRegistrations(this.botId(), { event_session_id: sessionId });
+      this.monitorRegistrations.set(registrations);
+      
+      // Load contacts if not loaded yet
+      if (this.contacts().length === 0) {
+        this.contacts.set(await this.dataService.getContacts(this.botId()));
+      }
+    } catch (e) {
+      this.toastService.showError(this.languageService.T('loadError'));
+    } finally {
+      this.isLoadingMonitor.set(false);
+    }
+  }
+
+  clearMonitorSelection() {
+    this.monitorEventFilter.set('all');
+    this.monitorSessionFilter.set('all');
+    this.selectedEventForMonitor.set(null);
+    this.selectedSessionForMonitor.set(null);
+    this.monitorRegistrations.set([]);
+  }
+
   // Filters
   filteredEvents = computed(() => {
     const term = this.eventSearch().toLowerCase().trim();
@@ -176,6 +231,30 @@ export class ProgramsEventsComponent {
     return this.sessions().filter(session => eventFilter === 'all' ? true : session.event_id === eventFilter);
   });
 
+  // Monitor Computed
+  monitorSessions = computed(() => {
+    const eventFilter = this.monitorEventFilter();
+    return this.sessions().filter(session => eventFilter === 'all' ? true : session.event_id === eventFilter);
+  });
+
+  monitorStats = computed(() => {
+    const registrations = this.monitorRegistrations();
+    return {
+      total: registrations.length,
+      preRegistro: registrations.filter(r => r.registration_status === 'PRE_REGISTRO').length,
+      confirmado: registrations.filter(r => r.registration_status === 'CONFIRMADO').length,
+      asistio: registrations.filter(r => r.registration_status === 'ASISTIO').length,
+      noShow: registrations.filter(r => r.registration_status === 'NO_SHOW').length,
+      cancelado: registrations.filter(r => r.registration_status === 'CANCELADO').length,
+    };
+  });
+
+  isEventPast = computed(() => {
+    const session = this.selectedSessionForMonitor();
+    if (!session?.start_at) return false;
+    return new Date(session.start_at) < new Date();
+  });
+
   // UI helpers
   getEventTypeName(id: number): string {
     return this.eventTypes().find(t => t.id === id)?.name ?? '—';
@@ -183,6 +262,14 @@ export class ProgramsEventsComponent {
 
   getEventTitle(id: number): string {
     return this.events().find(e => e.id === id)?.title ?? '—';
+  }
+
+  getContactInfo(contactId: string): { name: string; phone: string } {
+    const contact = this.contacts().find((c: any) => c.contact_id === contactId);
+    return {
+      name: contact?.name || 'Desconocido',
+      phone: contact?.phone_number || contactId
+    };
   }
 
   formatDate(iso?: string | null): string {
