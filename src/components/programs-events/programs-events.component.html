@@ -11,7 +11,6 @@
       <button (click)="activeTab.set('events')" [class.bg-slate-100]="activeTab() === 'events'" [class.dark:bg-slate-900]="activeTab() === 'events'" [class.text-indigo-600]="activeTab() === 'events'" [class.dark:text-indigo-400]="activeTab() === 'events'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('events') }}</button>
       <button (click)="activeTab.set('sessions')" [class.bg-slate-100]="activeTab() === 'sessions'" [class.dark:bg-slate-900]="activeTab() === 'sessions'" [class.text-indigo-600]="activeTab() === 'sessions'" [class.dark:text-indigo-400]="activeTab() === 'sessions'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('eventSessions') }}</button>
       <button (click)="activeTab.set('monitor')" [class.bg-slate-100]="activeTab() === 'monitor'" [class.dark:bg-slate-900]="activeTab() === 'monitor'" [class.text-indigo-600]="activeTab() === 'monitor'" [class.dark:text-indigo-400]="activeTab() === 'monitor'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('eventMonitor') }}</button>
-      <button (click)="activeTab.set('messages')" [class.bg-slate-100]="activeTab() === 'messages'" [class.dark:bg-slate-900]="activeTab() === 'messages'" [class.text-indigo-600]="activeTab() === 'messages'" [class.dark:text-indigo-400]="activeTab() === 'messages'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('messageVariants') }}</button>
       <button (click)="activeTab.set('metrics')" [class.bg-slate-100]="activeTab() === 'metrics'" [class.dark:bg-slate-900]="activeTab() === 'metrics'" [class.text-indigo-600]="activeTab() === 'metrics'" [class.dark:text-indigo-400]="activeTab() === 'metrics'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('metrics') }}</button>
       <button (click)="activeTab.set('event_types')" [class.bg-slate-100]="activeTab() === 'event_types'" [class.dark:bg-slate-900]="activeTab() === 'event_types'" [class.text-indigo-600]="activeTab() === 'event_types'" [class.dark:text-indigo-400]="activeTab() === 'event_types'" class="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1 transition-colors">{{ languageService.T('eventTypes') }}</button>
     </div>
@@ -173,50 +172,6 @@
                     </tr>
                   } @empty {
                     <tr><td colspan="6" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noSessionsFound') }}</td></tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-
-          @case ('messages') {
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-              <div class="flex flex-wrap gap-3">
-                <select [(ngModel)]="messageEventFilter" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
-                  <option [ngValue]="'all'">{{ languageService.T('allEvents') }}</option>
-                  @for(event of events(); track event.id) { <option [ngValue]="event.id">{{ event.title }}</option> }
-                </select>
-              </div>
-              <button (click)="openMessageVariantModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center shadow-md hover:shadow-lg">
-                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                {{ languageService.T('newMessageVariant') }}
-              </button>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left">
-                <thead class="bg-slate-50 dark:bg-slate-900/70 text-sm text-slate-500 dark:text-slate-400">
-                  <tr>
-                    <th class="p-3 font-semibold">{{ languageService.T('event') }}</th>
-                    <th class="p-3 font-semibold">{{ languageService.T('accountTier') }}</th>
-                    <th class="p-3 font-semibold">{{ languageService.T('metaTemplateName') }}</th>
-                    <th class="p-3 font-semibold">{{ languageService.T('ctaLabel') }}</th>
-                    <th class="p-3 font-semibold text-right">{{ languageService.T('actions') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for(variant of filteredMessageVariants(); track variant.id) {
-                    <tr class="border-t border-slate-200 dark:border-slate-700">
-                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ getEventTitle(variant.event_id) }}</td>
-                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ variant.account_tier }}</td>
-                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ variant.meta_template_name }}</td>
-                      <td class="p-3 text-slate-600 dark:text-slate-300">{{ variant.cta_label }}</td>
-                      <td class="p-3 text-right">
-                        <button (click)="openMessageVariantModal(variant)" class="text-blue-500 hover:text-blue-400 text-sm mr-3">{{ languageService.T('edit') }}</button>
-                        <button (click)="requestDelete({ type: 'message_variant', item: variant, label: variant.meta_template_name })" class="text-red-500 hover:text-red-400 text-sm">{{ languageService.T('delete') }}</button>
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr><td colspan="5" class="p-8 text-center text-slate-500 dark:text-slate-400">{{ languageService.T('noMessageVariants') }}</td></tr>
                   }
                 </tbody>
               </table>
