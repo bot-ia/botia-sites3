@@ -379,6 +379,24 @@ export class DataService {
     return firstValueFrom(this.http.post<void>(url, { contact_id: contactId }));
   }
 
+  async suggestEventParameterMappings(
+    botId: string,
+    templateId: number,
+    eventId?: number,
+    eventSessionId?: number
+  ): Promise<{ suggestions: Array<{ template_param_id: number; param_index: number; assign_type: string; assign_value: string; reasoning?: string }> }> {
+    const body: any = { template_id: templateId };
+    if (eventId) body.event_id = eventId;
+    if (eventSessionId) body.event_session_id = eventSessionId;
+    
+    return firstValueFrom(
+      this.http.post<any>(
+        `${this.apiService.baseUrl}/bots/${botId}/notifications/configs/suggest-event-mappings`,
+        body
+      )
+    );
+  }
+
   async getCampaigns(botId: string): Promise<Campaign[]> {
     return this.get<Campaign[]>(`${this.apiService.baseUrl}/bots/${botId}/notifications/campaigns`, []);
   }

@@ -329,6 +329,7 @@ export interface WATemplateDetail extends WATemplate {
 }
 
 export type NotificationType =
+  // Citas médicas / Procedimientos
   | 'appointment_reminder'
   | 'payment_reminder'
   | 'pre_procedure_instructions'
@@ -336,7 +337,13 @@ export type NotificationType =
   | 'birthday_greeting'
   | 'no_show_followup'
   | 'reactivation_campaign'
-  | 'marketing_promo';
+  | 'marketing_promo'
+  // Eventos / Programas
+  | 'event_reminder'
+  | 'event_confirmation'
+  | 'event_followup'
+  | 'event_cancellation'
+  | 'event_update';
 
 export interface NotificationConfig {
   id: number;
@@ -345,8 +352,20 @@ export interface NotificationConfig {
   template_id: number;
   offset_minutes: number;
   is_active: boolean;
+  
+  // Filtros para citas médicas
   apply_if_payment_status?: PaymentStatus;
   apply_if_confirmation_status?: ConfirmationStatus;
+  
+  // Campos para eventos
+  event_id?: number | null;
+  event_session_id?: number | null;
+  parameters?: Array<{
+    template_param_id: number;
+    assign_type: 'fixed_value' | 'contact_field' | 'event_field' | 'session_field';
+    assign_value: string;
+  }>;
+  
   metadata?: any;
   health_status?: 'ok' | 'warning' | 'error'; 
 }
