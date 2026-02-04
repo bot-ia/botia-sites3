@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment, NotificationHistory, EventType, Event, EventSession, EventMessageVariant, EventRegistration } from '../models';
+import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment, NotificationHistory, EventType, Event, EventSession, EventMessageVariant, EventRegistration, SessionMetricsResponse } from '../models';
 import { ApiService } from './api.service';
 
 @Injectable({
@@ -331,6 +331,10 @@ export class DataService {
     if (filters?.event_id !== undefined) params = params.set('event_id', String(filters.event_id));
     if (filters?.event_session_id !== undefined) params = params.set('event_session_id', String(filters.event_session_id));
     return this.get<EventRegistration[]>(`${this.apiService.baseUrl}/bots/${botId}/event_registrations`, [], params);
+  }
+
+  async getSessionMetrics(botId: string, sessionId: number): Promise<SessionMetricsResponse> {
+    return this.get<SessionMetricsResponse>(`${this.apiService.baseUrl}/bots/${botId}/event-sessions/${sessionId}/metrics`, {} as SessionMetricsResponse);
   }
 
 

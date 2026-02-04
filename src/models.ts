@@ -543,3 +543,40 @@ export interface CsvImportResponse {
   message: string;
   result?: CsvImportResult;
 }
+
+// === EVENT METRICS ===
+export interface SegmentMetric {
+  tipo_cuenta: string;   // 'A' | 'B' | 'C' | 'D' | 'SIN_SEGMENTO'
+  invitados: number;
+  pre_registro: number;
+  registrado: number;
+  confirmado: number;
+  cancelado: number;
+  no_show: number;
+  asistio: number;
+}
+
+export interface StatusMetric {
+  status: string;   // 'pre_registro' | 'confirmed' | 'canceled' | 'no_show' | 'attended'
+  total: number;
+}
+
+export interface SessionMetricsResponse {
+  bot_id: string;
+  event_id: number;
+  event_code: string;
+  event_title: string;
+  event_session_id: number;
+  session_name: string;
+  segment_metrics: SegmentMetric[];
+  status_metrics: StatusMetric[];
+  totals: {
+    invitados: number;
+    pre_registro: number;
+    registrado: number;
+    confirmado: number;
+    cancelado: number;
+    no_show: number;
+    asistio: number;
+  };
+}

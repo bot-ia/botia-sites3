@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { LanguageService } from '../../services/language.service';
 import { ToastService } from '../../services/toast.service';
-import { AccountTier, Event, EventAudienceLevel, EventCategory, EventDeliveryMode, EventMessageVariant, EventRegistration, EventSession, EventSessionStatus, EventType } from '../../models';
+import { AccountTier, Event, EventAudienceLevel, EventCategory, EventDeliveryMode, EventMessageVariant, EventRegistration, EventSession, EventSessionStatus, EventType, SessionMetricsResponse } from '../../models';
 
 type ProgramsEventsTab = 'events' | 'sessions' | 'messages' | 'metrics' | 'monitor' | 'event_types';
 
@@ -55,6 +55,9 @@ export class ProgramsEventsComponent {
   messageEventFilter = signal<number | 'all'>('all');
 
   metricsEventFilter = signal<number | 'all'>('all');
+  metricsSessionFilter = signal<number | 'all'>('all');
+  sessionMetrics = signal<SessionMetricsResponse | null>(null);
+  isLoadingMetrics = signal(false);
 
   // Monitor State
   monitorEventFilter = signal<number | 'all'>('all');
@@ -133,6 +136,41 @@ export class ProgramsEventsComponent {
     const eventId = this.metricsEventFilter();
     const filters = eventId === 'all' ? undefined : { event_id: eventId };
     this.registrations.set(await this.dataService.getEventRegistrations(this.botId(), filters));
+  }
+
+  async loadSessionMetrics(sessionId: number) {
+    this.isLoadingMetrics.set(true);
+    try {
+      const metrics = await this.dataService.getSessionMetrics(this.botId(), sessionId);
+      this.sessionMetrics.set(metrics);
+    } catch (e) {
+      this.toastService.showError(this.languageService.T('loadError'));
+      this.sessionMetrics.set(null);
+    } finally {
+      this.isLoadingMetrics.set(false);
+    }
+  }
+
+  selectSessionForMetrics(sessionId: number) {
+    this.metricsSessionFilter.set(sessionId);
+    this.loadSessionMetrics(sessionId);
+  }
+
+  clearMetricsSelection() {
+    this.metricsSessionFilter.set('all');
+    this.sessionMetrics.set(null);
+  }
+
+  getStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      'pre_registro': this.languageService.T('registrationStatus_PRE_REGISTRO'),
+      'registered': this.languageService.T('metrics_registered'),
+      'confirmed': this.languageService.T('registrationStatus_CONFIRMADO'),
+      'canceled': this.languageService.T('registrationStatus_CANCELADO'),
+      'no_show': this.languageService.T('registrationStatus_NO_SHOW'),
+      'attended': this.languageService.T('registrationStatus_ASISTIO')
+    };
+    return labels[status] || status;
   }
 
   // Monitor Methods
@@ -230,6 +268,8 @@ export class ProgramsEventsComponent {
     const eventFilter = this.metricsEventFilter();
     return this.sessions().filter(session => eventFilter === 'all' ? true : session.event_id === eventFilter);
   });
+
+  hasMetricsData = computed(() => this.sessionMetrics() !== null);
 
   // Monitor Computed
   monitorSessions = computed(() => {

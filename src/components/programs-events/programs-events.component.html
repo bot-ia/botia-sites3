@@ -391,54 +391,126 @@
           }
 
           @case ('metrics') {
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-              <select [(ngModel)]="metricsEventFilter" (ngModelChange)="loadRegistrationsForMetrics()" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
-                <option [ngValue]="'all'">{{ languageService.T('allEvents') }}</option>
-                @for(event of events(); track event.id) { <option [ngValue]="event.id">{{ event.title }}</option> }
-              </select>
-              <div class="text-sm text-slate-500 dark:text-slate-400">{{ languageService.T('metricsHint') }}</div>
+            <!-- Filtros de Evento y Sesión -->
+            <div class="flex flex-wrap items-center gap-4 mb-6">
+              <div class="flex-1 min-w-[250px]">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ languageService.T('selectEvent') }}</label>
+                <select [(ngModel)]="metricsEventFilter" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600">
+                  <option [ngValue]="'all'">{{ languageService.T('allEvents') }}</option>
+                  @for(event of events(); track event.id) { 
+                    <option [ngValue]="event.id">{{ event.title }}</option> 
+                  }
+                </select>
+              </div>
+              
+              <div class="flex-1 min-w-[250px]">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ languageService.T('selectSession') }}</label>
+                <select [(ngModel)]="metricsSessionFilter" (ngModelChange)="metricsSessionFilter() !== 'all' && selectSessionForMetrics(metricsSessionFilter() as number)" [disabled]="metricsEventFilter() === 'all'" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <option [ngValue]="'all'">{{ languageService.T('selectSession') }}</option>
+                  @for(session of metricsSessions(); track session.id) {
+                    <option [ngValue]="session.id">{{ session.name }} - {{ formatDate(session.start_at) }}</option>
+                  }
+                </select>
+              </div>
             </div>
-            <div class="space-y-4">
-              @for(session of metricsSessions(); track session.id) {
-                @if (getSessionCounts(session.id); as counts) {
-                  <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50 dark:bg-slate-900/50">
-                    <div class="flex items-center justify-between">
-                      <div>
-                        <div class="font-semibold text-slate-800 dark:text-white">{{ session.name }}</div>
-                        <div class="text-sm text-slate-500 dark:text-slate-400">{{ getEventTitle(session.event_id) }} · {{ formatDate(session.start_at) }}</div>
-                      </div>
-                      <div class="text-sm text-slate-500 dark:text-slate-400">{{ languageService.T('total') }}: {{ counts.total }}</div>
+
+            <!-- Estado: Sin selección -->
+            @if (metricsSessionFilter() === 'all') {
+              <div class="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-slate-400">
+                <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <p class="text-lg font-medium">{{ languageService.T('selectEventAndSession') }}</p>
+              </div>
+            }
+
+            <!-- Estado: Cargando -->
+            @else if (isLoadingMetrics()) {
+              <div class="flex flex-col items-center justify-center py-16">
+                <svg class="animate-spin h-12 w-12 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-4 text-slate-600 dark:text-slate-300">{{ languageService.T('loadingMetrics') }}</p>
+              </div>
+            }
+
+            <!-- Datos de Métricas -->
+            @else if (hasMetricsData() && sessionMetrics(); as metrics) {
+              <div class="space-y-6">
+                <!-- Resumen General -->
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">{{ languageService.T('generalSummary') }}</h3>
+                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg p-4 shadow-md">
+                      <div class="text-sm opacity-90">{{ languageService.T('totalInvited') }}</div>
+                      <div class="text-3xl font-bold mt-1">{{ metrics.totals.invitados }}</div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div>
-                        <h4 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-2">{{ languageService.T('byAccountTier') }}</h4>
-                        <div class="grid grid-cols-4 gap-2">
-                          @for(tier of accountTiers; track tier) {
-                            <div class="p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-center">
-                              <div class="text-xs text-slate-500 dark:text-slate-400">{{ tier }}</div>
-                              <div class="text-lg font-semibold text-slate-800 dark:text-white">{{ counts.byTier[tier] }}</div>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                      <div>
-                        <h4 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-2">{{ languageService.T('byStatus') }}</h4>
-                        <div class="grid grid-cols-2 gap-2">
-                          @for(status of ['PRE_REGISTRO','CONFIRMADO','CANCELADO','NO_SHOW','ASISTIO']; track status) {
-                            <div class="p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-center">
-                              <div class="text-xs text-slate-500 dark:text-slate-400">{{ status }}</div>
-                              <div class="text-lg font-semibold text-slate-800 dark:text-white">{{ counts.byStatus[status] || 0 }}</div>
-                            </div>
-                          }
-                        </div>
-                      </div>
+                    <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg p-4 shadow-md">
+                      <div class="text-sm opacity-90">{{ languageService.T('preRegistered') }}</div>
+                      <div class="text-3xl font-bold mt-1">{{ metrics.totals.pre_registro }}</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
+                      <div class="text-sm opacity-90">{{ languageService.T('confirmed') }}</div>
+                      <div class="text-3xl font-bold mt-1">{{ metrics.totals.confirmado }}</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-4 shadow-md">
+                      <div class="text-sm opacity-90">{{ languageService.T('attended') }}</div>
+                      <div class="text-3xl font-bold mt-1">{{ metrics.totals.asistio }}</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg p-4 shadow-md">
+                      <div class="text-sm opacity-90">{{ languageService.T('noShow') }}</div>
+                      <div class="text-3xl font-bold mt-1">{{ metrics.totals.no_show }}</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white rounded-lg p-4 shadow-md">
+                      <div class="text-sm opacity-90">{{ languageService.T('canceled') }}</div>
+                      <div class="text-3xl font-bold mt-1">{{ metrics.totals.cancelado }}</div>
                     </div>
                   </div>
-                }
-              } @empty {
-                <div class="text-center p-8 text-slate-500 dark:text-slate-400">{{ languageService.T('noMetricsData') }}</div>
-              }
-            </div>
+                </div>
+
+                <!-- Por Tipo de Cuenta -->
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">{{ languageService.T('byAccountType') }}</h3>
+                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    @for(segment of metrics.segment_metrics; track segment.tipo_cuenta) {
+                      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+                        <div class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3">
+                          {{ segment.tipo_cuenta === 'SIN_SEGMENTO' ? languageService.T('noSegment') : languageService.T('accountType').replace('{type}', segment.tipo_cuenta) }}
+                        </div>
+                        <div class="space-y-2">
+                          <div class="flex justify-between items-center">
+                            <span class="text-xs text-slate-500">{{ languageService.T('totalInvited') }}:</span>
+                            <span class="font-semibold text-purple-600 dark:text-purple-400">{{ segment.invitados }}</span>
+                          </div>
+                          <div class="flex justify-between items-center">
+                            <span class="text-xs text-slate-500">{{ languageService.T('confirmed') }}:</span>
+                            <span class="font-semibold text-blue-600 dark:text-blue-400">{{ segment.confirmado }}</span>
+                          </div>
+                          <div class="flex justify-between items-center">
+                            <span class="text-xs text-slate-500">{{ languageService.T('attended') }}:</span>
+                            <span class="font-semibold text-green-600 dark:text-green-400">{{ segment.asistio }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Por Estado de Registro -->
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">{{ languageService.T('byRegistrationStatus') }}</h3>
+                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    @for(statusMetric of metrics.status_metrics; track statusMetric.status) {
+                      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2">{{ getStatusLabel(statusMetric.status) }}</div>
+                        <div class="text-2xl font-bold text-slate-800 dark:text-white">{{ statusMetric.total }}</div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
           }
         }
       </div>

@@ -825,4 +825,21 @@ export const en = {
   registrationStatus_no_show: 'No Show',
   registrationStatus_cancelado: 'Canceled',
   registrationStatus_canceled: 'Canceled',
-  registrationStatus_cancelled: 'Canceled',};
+  registrationStatus_cancelled: 'Canceled',
+  
+  // Metrics
+  metricsTab: 'Metrics',
+  selectEventAndSession: 'Select an event and session to view metrics',
+  loadingMetrics: 'Loading metrics...',
+  generalSummary: 'General Summary',
+  byAccountType: 'By Account Type',
+  byRegistrationStatus: 'By Registration Status',
+  accountType: 'Account {type}',
+  noSegment: 'No Segment',
+  metrics_registered: 'Registered',
+  totalInvited: 'Total Invited',
+  preRegistered: 'Pre-registered',
+  confirmed: 'Confirmed',
+  canceled: 'Canceled',
+  noShow: 'No Show',
+  attended: 'Attended',};
