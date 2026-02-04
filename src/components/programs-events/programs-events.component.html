@@ -405,7 +405,7 @@
               
               <div class="flex-1 min-w-[250px]">
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ languageService.T('selectSession') }}</label>
-                <select [(ngModel)]="metricsSessionFilter" (ngModelChange)="metricsSessionFilter() !== 'all' && selectSessionForMetrics(metricsSessionFilter() as number)" [disabled]="metricsEventFilter() === 'all'" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                <select [(ngModel)]="metricsSessionFilter" (ngModelChange)="metricsSessionFilter() !== 'all' && selectSessionForMetrics($any(metricsSessionFilter()))" [disabled]="metricsEventFilter() === 'all'" class="w-full bg-slate-100 dark:bg-slate-700 p-2 rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
                   <option [ngValue]="'all'">{{ languageService.T('selectSession') }}</option>
                   @for(session of metricsSessions(); track session.id) {
                     <option [ngValue]="session.id">{{ session.name }} - {{ formatDate(session.start_at) }}</option>

@@ -837,9 +837,4 @@ export const en = {
   accountType: 'Account {type}',
   noSegment: 'No Segment',
   metrics_registered: 'Registered',
-  totalInvited: 'Total Invited',
-  preRegistered: 'Pre-registered',
-  confirmed: 'Confirmed',
-  canceled: 'Canceled',
-  noShow: 'No Show',
-  attended: 'Attended',};
+};

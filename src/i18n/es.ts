@@ -840,10 +840,4 @@ export const es = {
   accountType: 'Cuenta {type}',
   noSegment: 'Sin Segmento',
   metrics_registered: 'Registrados',
-  totalInvited: 'Total Invitados',
-  preRegistered: 'Pre-registrados',
-  confirmed: 'Confirmados',
-  canceled: 'Cancelados',
-  noShow: 'No Asistieron',
-  attended: 'Asistieron',
 };
