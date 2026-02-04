@@ -3,6 +3,10 @@
 ## Resumen
 Adaptar el sistema de notificaciones automáticas para soportar eventos (programas, webinars, workshops) con mapeo inteligente de 8 parámetros usando IA, similar al sistema existente de campañas.
 
+**Estructura de Tablas:** Igual que campañas con tabla principal + tabla de parámetros separada:
+- `notification_configs` (configuración base)
+- `notification_config_parameters` (mapeo de parámetros)
+
 ---
 
 ## 🎯 Objetivo
@@ -26,46 +30,68 @@ Adaptar para **eventos** (programas,webinars, workshops) con:
 
 ## 🗄️ Cambios en Base de Datos
 
-### Tabla `botia.notification_configs` (Existente - Modificar)
+### Tabla `botia.notification_configs` (CREAR - No existe)
 
 ```sql
--- Agregar columnas necesarias para eventos
-ALTER TABLE botia.notification_configs
-ADD COLUMN IF NOT EXISTS event_id INTEGER REFERENCES botia.events(id),
-ADD COLUMN IF NOT EXISTS event_session_id INTEGER REFERENCES botia.event_sessions(id),
-ADD COLUMN IF NOT EXISTS parameters JSONB; -- Almacenar mapeo de parámetros
+-- Tabla principal de configuraciones de notificaciones automáticas
+CREATE TABLE IF NOT EXISTS botia.notification_configs (
+    id SERIAL PRIMARY KEY,
+    bot_id TEXT NOT NULL,
+    notification_type TEXT NOT NULL,
+    template_id INTEGER NOT NULL REFERENCES botia.wa_templates(id),
+    offset_minutes INTEGER NOT NULL DEFAULT -1440, -- -24 horas por defecto
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    
+    -- Filtros para citas médicas (opcional)
+    apply_if_payment_status TEXT,
+    apply_if_confirmation_status TEXT,
+    
+    -- Campos para eventos (opcional)
+    event_id INTEGER REFERENCES botia.events(id),
+    event_session_id INTEGER REFERENCES botia.event_sessions(id),
+    
+    metadata JSONB,
+    health_status TEXT DEFAULT 'ok', -- 'ok', 'warning', 'error'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- Índices recomendados
+CREATE INDEX IF NOT EXISTS idx_notification_configs_bot_id ON botia.notification_configs(bot_id);
 CREATE INDEX IF NOT EXISTS idx_notification_configs_event_id ON botia.notification_configs(event_id);
 CREATE INDEX IF NOT EXISTS idx_notification_configs_event_session_id ON botia.notification_configs(event_session_id);
+CREATE INDEX IF NOT EXISTS idx_notification_configs_is_active ON botia.notification_configs(is_active);
 ```
 
-### Estructura de `parameters` (JSONB)
+### Tabla `botia.notification_config_parameters` (CREAR - Similar a campañas)
 
-```json
-[
-  {
-    "template_param_id": 123,
-    "assign_type": "event_field",
-    "assign_value": "title"
-  },
-  {
-    "template_param_id": 124,
-    "assign_type": "session_field",
-    "assign_value": "start_at"
-  },
-  {
-    "template_param_id": 125,
-    "assign_type": "contact_field",
-    "assign_value": "name"
-  },
-  {
-    "template_param_id": 126,
-    "assign_type": "fixed_value",
-    "assign_value": "Bienvenido"
-  }
-]
+```sql
+-- Tabla de parámetros mapeados (similar a notification_campaign_parameters)
+CREATE TABLE IF NOT EXISTS botia.notification_config_parameters (
+    id SERIAL PRIMARY KEY,
+    config_id INTEGER NOT NULL REFERENCES botia.notification_configs(id) ON DELETE CASCADE,
+    template_param_id INTEGER NOT NULL REFERENCES botia.wa_template_parameters(id),
+    assign_type TEXT NOT NULL, -- 'fixed_value', 'contact_field', 'event_field', 'session_field'
+    assign_value TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(config_id, template_param_id)
+);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_config_params_config_id ON botia.notification_config_parameters(config_id);
+CREATE INDEX IF NOT EXISTS idx_config_params_template_param ON botia.notification_config_parameters(template_param_id);
 ```
+
+### Comparación con Campañas
+
+| Campañas | Notificaciones Automáticas |
+|----------|---------------------------|
+| `notification_campaigns` | `notification_configs` |
+| `notification_campaign_parameters` | `notification_config_parameters` |
+| Ejecución manual | Ejecución automática por evento |
+| `status`: DRAFT, READY, RUNNING | `is_active`: true/false |
 
 ### Tipos de Asignación (`assign_type`)
 
@@ -82,9 +108,14 @@ CREATE INDEX IF NOT EXISTS idx_notification_configs_event_session_id ON botia.no
 
 ### 1. `POST /api/bots/{bot_id}/notifications/configs` (Modificar)
 
-**Descripción**: Crear configuración de notificación automática (ahora soporta eventos).
+**Descripción**: Crear configuración de notificación automática con parámetros.
 
-**Request Body Extendido:**
+**Lógica Backend:**
+1. Crear registro en `notification_configs`
+2. Si vienen `parameters`, crear registros en `notification_config_parameters`
+3. Retornar config completo con parámetros unidos
+
+**Request Body:**
 ```json
 {
   "notification_type": "event_reminder",
@@ -113,18 +144,63 @@ CREATE INDEX IF NOT EXISTS idx_notification_configs_event_session_id ON botia.no
 }
 ```
 
-**Nuevos Campos:**
-- `event_id` (optional): ID del evento al que aplica
-- `event_session_id` (optional): ID de la sesión específica (o null para todas)
-- `parameters` (optional): Mapeo de parámetros de la plantilla
-
-**Nota**: Si ambos son `null`, aplica a **todos** los eventos del bot.
+**Response:**
+```json
+{
+  "id": 15,
+  "bot_id": "CONS_ASIS",
+  "notification_type": "event_reminder",
+  "template_id": 42,
+  "offset_minutes": -1440,
+  "is_active": true,
+  "event_id": 5,
+  "event_session_id": null,
+  "parameters": [
+    {
+      "id": 1,
+      "config_id": 15,
+      "template_param_id": 123,
+      "assign_type": "contact_field",
+      "assign_value": "name"
+    },
+    {
+      "id": 2,
+      "config_id": 15,
+      "template_param_id": 124,
+      "assign_type": "event_field",
+      "assign_value": "title"
+    }
+  ],
+  "created_at": "2026-02-04T10:00:00Z"
+}
+```
 
 ---
 
 ### 2. `PUT /api/bots/{bot_id}/notifications/configs/{config_id}` (Modificar)
 
-**Descripción**: Actualizar configuración existente (incluye parámetros).
+**Descripción**: Actualizar configuración completa (reemplaza parámetros).
+
+**Lógica Backend:**
+1. Actualizar registro en `notification_configs`
+2. Eliminar parámetros antiguos: `DELETE FROM notification_config_parameters WHERE config_id = X`
+3. Insertar nuevos parámetros si vienen en `parameters`
+4. Retornar config actualizado con parámetros
+
+**Request Body:**
+```json
+{
+  "offset_minutes": -2880,
+  "is_active": false,
+  "parameters": [
+    {
+      "template_param_id": 123,
+      "assign_type": "fixed_value",
+      "assign_value": "Estimado participante"
+    }
+  ]
+}
+```
 
 **Request Body:**
 ```json
@@ -405,10 +481,12 @@ export type NotificationType =
   | 'event_update';
 ```
 
-### 2. Extender `NotificationConfig`
+### 2. Extender `NotificationConfig` y Crear `NotificationConfigParameter`
 
 ```typescript
 // src/models.ts
+
+// Ya existe en models.ts
 export interface NotificationConfig {
   id: number;
   bot_id: string;
@@ -417,21 +495,30 @@ export interface NotificationConfig {
   offset_minutes: number;
   is_active: boolean;
   
-  // Existing (citas)
+  // Filtros para citas médicas
   apply_if_payment_status?: PaymentStatus;
   apply_if_confirmation_status?: ConfirmationStatus;
   
-  // New (eventos)
+  // Campos para eventos
   event_id?: number | null;
   event_session_id?: number | null;
-  parameters?: Array<{
-    template_param_id: number;
-    assign_type: 'fixed_value' | 'contact_field' | 'event_field' | 'session_field';
-    assign_value: string;
-  }>;
+  
+  // Los parámetros se manejan en tabla separada (similar a campañas)
+  parameters?: NotificationConfigParameter[];
   
   metadata?: any;
-  health_status?: 'ok' | 'warning' | 'error';
+  health_status?: 'ok' | 'warning' | 'error'; 
+}
+
+// NUEVO: Interface para parámetros en tabla separada
+export interface NotificationConfigParameter {
+  id?: number;
+  config_id: number;
+  template_param_id: number;
+  assign_type: 'fixed_value' | 'contact_field' | 'event_field' | 'session_field';
+  assign_value: string;
+  created_at?: string;
+  updated_at?: string;
 }
 ```
 

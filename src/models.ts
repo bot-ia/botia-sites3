@@ -360,14 +360,22 @@ export interface NotificationConfig {
   // Campos para eventos
   event_id?: number | null;
   event_session_id?: number | null;
-  parameters?: Array<{
-    template_param_id: number;
-    assign_type: 'fixed_value' | 'contact_field' | 'event_field' | 'session_field';
-    assign_value: string;
-  }>;
+  
+  // Los parámetros se manejan en tabla separada (similar a campañas)
+  parameters?: NotificationConfigParameter[];
   
   metadata?: any;
   health_status?: 'ok' | 'warning' | 'error'; 
+}
+
+export interface NotificationConfigParameter {
+  id?: number;
+  config_id: number;
+  template_param_id: number;
+  assign_type: 'fixed_value' | 'contact_field' | 'event_field' | 'session_field';
+  assign_value: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export type CampaignStatus = 'DRAFT' | 'READY' | 'RUNNING' | 'COMPLETED' | 'FINISHED';
