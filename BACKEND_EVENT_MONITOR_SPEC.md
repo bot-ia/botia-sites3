@@ -493,17 +493,19 @@ El frontend normaliza automáticamente todos los formatos de estado:
 - [x] Nueva pestaña "Monitor de Eventos"
 - [x] Selector de Evento/Sesión
 - [x] Detección de evento pasado vs futuro
-- [x] 6 tarjeEn Desarrollo)
-- [x] Endpoint GET `/event_registrations` ✅ Existe (incompleto)
-- [x] Endpoint GET `/event_invites` ✅ Existe
-- [ ] 🔥 Endpoint GET `/invites-and-registrations` ⏳ **CRÍTICO**
-- [ ] 🔥 Endpoint GET `/event_sessions/{id}/stats` ⏳ **CRÍTICO**
-- [ ] Endpoint GET `/event
+- [x] 6 tarjetas de estadísticas con gradientes
+- [x] Tabla de registros con información consolidada
+- [x] Normalización de estados del backend
+- [x] Formateo de fuentes de registro
+- [x] **Actualizado para usar endpoint consolidado `/invites-and-registrations`**
 - [x] Integración con contactos
 
-### Backend (Pendiente)
-- [x] Endpoint GET `/event_registrations` ✅ Ya existe
-- [ ] Elan de Implementación Backend
+### Backend (En Desarrollo)
+- [x] Endpoint GET `/event_registrations` ✅ Existe (incompleto - solo registros)
+- [x] Endpoint GET `/event_invites` ✅ Existe
+- [x] 🔥 Endpoint GET `/event_sessions/{id}/invites-and-registrations` ✅ **IMPLEMENTADO**
+- [ ] 🔥 Endpoint GET `/event_sessions/{id}/stats` ⏳ **CRÍTICO**
+- [ ] Endpoint GET `/events/{id}/stats` (opcional)lan de Implementación Backend
 
 ### Fase 1: Crítico (Bloqueantes - 5.5h)
 1. **Crear `/invites-and-registrations`** (3h)

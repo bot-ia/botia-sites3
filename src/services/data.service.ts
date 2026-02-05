@@ -333,6 +333,13 @@ export class DataService {
     return this.get<EventRegistration[]>(`${this.apiService.baseUrl}/bots/${botId}/event_registrations`, [], params);
   }
 
+  async getSessionInvitesAndRegistrations(botId: string, sessionId: number): Promise<EventRegistration[]> {
+    return this.get<EventRegistration[]>(
+      `${this.apiService.baseUrl}/bots/${botId}/event_sessions/${sessionId}/invites-and-registrations`, 
+      []
+    );
+  }
+
   async getSessionMetrics(botId: string, sessionId: number): Promise<SessionMetricsResponse> {
     return this.get<SessionMetricsResponse>(`${this.apiService.baseUrl}/bots/${botId}/event-sessions/${sessionId}/metrics`, {} as SessionMetricsResponse);
   }

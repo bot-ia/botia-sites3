@@ -196,8 +196,8 @@ export class ProgramsEventsComponent {
       const session = this.sessions().find(s => s.id === sessionId);
       this.selectedSessionForMonitor.set(session ?? null);
       
-      // Load registrations for this session
-      const registrations = await this.dataService.getEventRegistrations(this.botId(), { event_session_id: sessionId });
+      // Load invites AND registrations for this session (consolidated endpoint)
+      const registrations = await this.dataService.getSessionInvitesAndRegistrations(this.botId(), sessionId);
       this.monitorRegistrations.set(registrations);
       
       // Load contacts if not loaded yet
