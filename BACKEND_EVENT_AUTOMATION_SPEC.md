@@ -221,7 +221,194 @@ CREATE INDEX IF NOT EXISTS idx_config_params_template_param ON botia.notificatio
 
 ---
 
-### 3. `POST /api/bots/{bot_id}/notifications/configs/suggest-event-mappings` (Nuevo)
+### 3. `POST /api/bots/{bot_id}/notifications/configs/{config_id}/test` (NUEVO)
+
+**Descripción**: Enviar notificación de prueba para validar configuración.
+
+**Diferencia con Citas Médicas:**
+- Citas médicas: Usa datos reales de appointment + contact
+- Eventos: Usa datos reales de event + session + contact
+
+**Lógica Backend:**
+1. Obtener `notification_config` con ID especificado
+2. Validar que `config.bot_id == bot_id`
+3. Obtener template y parámetros de la config
+4. Resolver parámetros según tipo de notificación:
+   - Si es `event_*` tipo → Usar datos de evento/sesión
+   - Si es `appointment_*` tipo → Usar datos de cita médica
+5. Enviar notificación al teléfono especificado
+
+**Request Body:**
+```json
+{
+  "phone": "+573142376428"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Test notification sent successfully",
+  "phone": "+573142376428",
+  "resolved_params": {
+    "1": "Orlando Prado",
+    "2": "Webinar",
+    "3": "Marketing Digital 2026",
+    "4": "15 de Marzo, 2026",
+    "5": "10:00 AM",
+    "6": "GMT-5",
+    "7": "Virtual",
+    "8": "https://zoom.us/j/123456"
+  }
+}
+```
+
+**Casos de Error:**
+```json
+{
+  "success": false,
+  "error": "No event data found for config",
+  "detail": "Config type is 'event_reminder' but no event_id or event_session_id specified"
+}
+```
+
+**Implementación Backend:**
+```python
+@router.post("/bots/{bot_id}/notifications/configs/{config_id}/test")
+async def test_notification_config(
+    bot_id: str,
+    config_id: int,
+    request: TestNotificationRequest,
+    db: Session = Depends(get_db)
+):
+    """Enviar notificación de prueba"""
+    
+    # 1. Obtener config
+    config = db.query(NotificationConfig).filter_by(
+        id=config_id,
+        bot_id=bot_id
+    ).first()
+    if not config:
+        raise HTTPException(404, "Config not found")
+    
+    # 2. Obtener template
+    template = db.query(WATemplate).filter_by(id=config.template_id).first()
+    if not template:
+        raise HTTPException(404, "Template not found")
+    
+    # 3. Obtener parámetros de la config
+    config_params = db.query(NotificationConfigParameter).filter_by(
+        config_id=config.id
+    ).order_by(NotificationConfigParameter.template_param_id).all()
+    
+    # 4. Resolver parámetros según tipo
+    resolved_params = {}
+    
+    if config.notification_type.startswith('event_'):
+        # Tipo evento - necesitamos datos de evento/sesión
+        event = None
+        session = None
+        
+        if config.event_id:
+            event = db.query(Event).filter_by(id=config.event_id).first()
+        
+        if config.event_session_id:
+            session = db.query(EventSession).filter_by(id=config.event_session_id).first()
+        elif event:
+            # Usar primera sesión del evento
+            session = db.query(EventSession).filter_by(event_id=event.id).first()
+        
+        if not event and not session:
+            raise HTTPException(400, {
+                "success": False,
+                "error": "No event data found",
+                "detail": "Config is event-based but no event/session specified"
+            })
+        
+        # Obtener contacto de prueba (primero del bot o crear uno ficticio)
+        contact = db.query(Contact).filter_by(
+            bot_id=bot_id,
+            phone=request.phone
+        ).first()
+        
+        contact_data = {
+            "name": contact.name if contact else "Usuario Prueba",
+            "email": contact.email if contact else "test@example.com",
+            "phone": request.phone,
+            "account_tier": contact.account_tier if contact else "A"
+        }
+        
+        # Resolver cada parámetro
+        for param in config_params:
+            template_param = db.query(TemplateParameter).filter_by(
+                id=param.template_param_id
+            ).first()
+            
+            value = None
+            
+            if param.assign_type == 'contact_field':
+                value = contact_data.get(param.assign_value, '')
+            
+            elif param.assign_type == 'event_field' and event:
+                value = getattr(event, param.assign_value, '')
+            
+            elif param.assign_type == 'session_field' and session:
+                raw_value = getattr(session, param.assign_value, '')
+                
+                # Formateo especial para fechas/horas
+                if param.assign_value == 'start_at' and session.start_at:
+                    # Determinar si es fecha u hora según nombre del parámetro
+                    param_name = template_param.param_name.lower() if template_param else ''
+                    if 'fecha' in param_name or 'date' in param_name:
+                        value = session.start_at.strftime('%d de %B, %Y')
+                    elif 'hora' in param_name or 'time' in param_name:
+                        value = session.start_at.strftime('%I:%M %p')
+                    else:
+                        value = session.start_at.strftime('%d/%m/%Y %I:%M %p')
+                
+                elif param.assign_value == 'meeting_link':
+                    value = raw_value if raw_value else 'No disponible'
+                
+                else:
+                    value = raw_value
+            
+            elif param.assign_type == 'fixed_value':
+                value = param.assign_value
+            
+            resolved_params[str(template_param.param_index)] = value or ''
+    
+    else:
+        # Tipo appointment - lógica existente de citas médicas
+        # ... (código existente)
+        pass
+    
+    # 5. Enviar notificación
+    try:
+        await send_whatsapp_template(
+            phone=request.phone,
+            template_name=template.template_name,
+            params=list(resolved_params.values())
+        )
+        
+        return {
+            "success": True,
+            "message": "Test notification sent successfully",
+            "phone": request.phone,
+            "resolved_params": resolved_params
+        }
+    
+    except Exception as e:
+        raise HTTPException(500, {
+            "success": False,
+            "error": "Failed to send notification",
+            "detail": str(e)
+        })
+```
+
+---
+
+### 4. `POST /api/bots/{bot_id}/notifications/configs/suggest-event-mappings` (Nuevo)
 
 **Descripción**: Usar IA (Gemini) para sugerir mapeo de parámetros de plantilla basado en datos de evento/sesión.
 
@@ -768,6 +955,20 @@ async suggestEventParameterMappings(
     )
   );
 }
+
+// NUEVO: Método para probar notificación automática
+async testNotificationConfig(
+  botId: string,
+  configId: number,
+  phone: string
+): Promise<{ success: boolean; message: string; resolved_params?: any }> {
+  return firstValueFrom(
+    this.http.post<any>(
+      `${this.apiService.baseUrl}/bots/${botId}/notifications/configs/${configId}/test`,
+      { phone }
+    )
+  );
+}
 ```
 
 ---
@@ -928,9 +1129,10 @@ Devuelve SOLO un JSON array con este formato:
 ## ✅ Checklist de Implementación
 
 ### Backend
-- [ ] Agregar columnas `event_id`, `event_session_id`, `parameters` a `notification_configs`
+- [ ] Crear tablas `notification_configs` y `notification_config_parameters`
 - [ ] Modificar endpoint `POST /notifications/configs` para aceptar parámetros
 - [ ] Modificar endpoint `PUT /notifications/configs/{id}` para actualizar parámetros
+- [ ] **Crear endpoint `POST /notifications/configs/{config_id}/test`** (prueba)
 - [ ] Crear endpoint `POST /notifications/configs/suggest-event-mappings`
 - [ ] Actualizar worker/cron para resolver parámetros dinámicamente al enviar
 - [ ] Agregar lógica de formateo para fechas/horas (`start_at` → "10 de Marzo, 2026 a las 3:00 PM")
@@ -943,6 +1145,8 @@ Devuelve SOLO un JSON array con este formato:
 - [ ] Implementar botón "Autocompletar con IA"
 - [ ] Agregar método `isEventBasedNotification()`
 - [ ] Agregar método `autoFillAutomationParameters()`
+- [ ] **Agregar método `testNotificationConfig()` al DataService**
+- [ ] **Actualizar botón "Probar" para usar endpoint correcto según tipo**
 - [ ] Agregar `suggestEventParameterMappings()` al DataService
 - [ ] Agregar traducciones para nuevos campos
 
@@ -966,5 +1170,75 @@ Devuelve SOLO un JSON array con este formato:
 2. **IA mapea automáticamente** los 8 parámetros típicos (nombre, tipo, titulo, fecha, hora, zona, modalidad, link)
 3. **Sistema envía notificaciones** 24h antes del evento con datos personalizados de cada contacto
 4. **Compatible con flujo existente** de citas médicas (no rompe nada)
+5. **Botón "Probar" funciona correctamente** usando datos de eventos cuando corresponde
+
+---
+
+## 📊 Comparación de Endpoints de Prueba
+
+| Aspecto | Citas Médicas | Eventos (NUEVO) |
+|---------|--------------|-----------------|
+| **Endpoint** | `POST /appointments/{appointment_id}/test-notification` | `POST /notifications/configs/{config_id}/test` |
+| **Origen de Datos** | `patient_appointments` tabla | `events` + `event_sessions` tablas |
+| **Parámetros Resueltos** | Desde cita médica (doctor, fecha, consultorio) | Desde evento (título, sesión, speaker, link) |
+| **Campos del Contacto** | `contact.name`, `contact.phone` | `contact.name`, `contact.phone`, `contact.account_tier` |
+| **Fechas/Horas** | `appointment.scheduled_at` | `session.start_at` (formateado) |
+| **Campos Especiales** | `doctor_name`, `office_location`, `payment_status` | `meeting_link`, `speaker_name`, `delivery_mode` |
+| **Validación** | Requiere `appointment_id` existente | Requiere `event_id` o `event_session_id` en config |
+| **Uso Frontend** | Modal de citas médicas | Modal de notificaciones automáticas |
+
+### Ejemplo de Uso en Frontend
+
+```typescript
+// notifications.component.ts
+
+async testAutomationConfig(config: NotificationConfig) {
+  if (!config.id) return;
+  
+  const phone = prompt('Ingrese número de teléfono para prueba:');
+  if (!phone) return;
+  
+  try {
+    this.isTestingSending.set(true);
+    
+    // IMPORTANTE: Usar endpoint correcto según tipo de bot
+    const response = await this.dataService.testNotificationConfig(
+      this.botId(),
+      config.id,
+      phone
+    );
+    
+    if (response.success) {
+      this.toastService.showSuccess(
+        `Notificación de prueba enviada a ${phone}`
+      );
+      
+      // Opcional: Mostrar parámetros resueltos
+      if (response.resolved_params) {
+        console.log('Parámetros resueltos:', response.resolved_params);
+      }
+    }
+  } catch (error: any) {
+    console.error('Test error:', error);
+    this.toastService.showError(
+      error?.error?.detail || 'Error al enviar notificación de prueba'
+    );
+  } finally {
+    this.isTestingSending.set(false);
+  }
+}
+```
+
+### Diferencia Clave
+
+**Citas Médicas:**
+```
+Usuario → Selecciona cita específica → Test usa datos de ESA cita
+```
+
+**Eventos (Nuevo):**
+```
+Usuario → Configura automation con event_id → Test usa datos del EVENTO configurado
+```
 
 ¡Frontend listo para eventos! 🎉

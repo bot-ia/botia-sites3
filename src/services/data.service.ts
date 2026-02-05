@@ -374,9 +374,17 @@ export class DataService {
     return this.get<NotificationHistory[]>(`${this.apiService.baseUrl}/bots/${botId}/notifications/configs/${configId}/history`, []);
   }
 
-  async testNotificationConfig(botId: string, configId: number, contactId: string): Promise<void> {
-    const url = `${this.apiService.baseUrl}/bots/${botId}/notifications/configs/${configId}/test`;
-    return firstValueFrom(this.http.post<void>(url, { contact_id: contactId }));
+  async testNotificationConfig(
+    botId: string,
+    configId: number,
+    phone: string
+  ): Promise<{ success: boolean; message: string; phone: string; resolved_params?: any }> {
+    return firstValueFrom(
+      this.http.post<any>(
+        `${this.apiService.baseUrl}/bots/${botId}/notifications/configs/${configId}/test`,
+        { phone }
+      )
+    );
   }
 
   async suggestEventParameterMappings(
