@@ -441,9 +441,16 @@ export class NotificationsComponent {
       return;
     }
     
+    // Buscar el contacto para obtener el phone_number
+    const contact = this.allBotContacts().find(c => c.contact_id === contactId);
+    if (!contact || !contact.phone_number) {
+      this.toastService.showError(this.languageService.T('contactHasNoPhone'));
+      return;
+    }
+    
     this.isTesting.set(true);
     try {
-      await this.dataService.testNotificationConfig(this.botId(), config.id, contactId);
+      await this.dataService.testNotificationConfig(this.botId(), config.id, contact.phone_number);
       this.toastService.showSuccess(this.languageService.T('testSuccessMessage'));
       this.closeModal();
     } catch(e) {

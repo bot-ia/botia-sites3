@@ -382,7 +382,7 @@ export class DataService {
     return firstValueFrom(
       this.http.post<any>(
         `${this.apiService.baseUrl}/bots/${botId}/notifications/configs/${configId}/test`,
-        { phone }
+        { phone_number: phone }
       )
     );
   }

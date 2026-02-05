@@ -241,9 +241,18 @@ CREATE INDEX IF NOT EXISTS idx_config_params_template_param ON botia.notificatio
 **Request Body:**
 ```json
 {
+  "phone_number": "+573142376428"
+}
+```
+
+**Alternativa Compatible:**
+```json
+{
   "phone": "+573142376428"
 }
 ```
+
+**Nota Backend:** El backend acepta tanto `phone_number` (recomendado) como `phone` por compatibilidad.
 
 **Response:**
 ```json
