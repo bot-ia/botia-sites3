@@ -85,8 +85,8 @@ export class DataService {
   
   // LOGS
   async getInteractionLogs(botId: string, start: string, end: string): Promise<InteractionLog[]> {
-    const params = new HttpParams().set('start_date', start).set('end_date', end);
-    const url = `${this.apiService.baseUrl}/bots/${botId}/interaction_logs`;
+    const params = new HttpParams().set('start', start).set('end', end);
+    const url = `${this.apiService.baseUrl}/bots/${botId}/interaction-logs`;
     return firstValueFrom(
         this.http.get<InteractionLog[]>(url, { params }).pipe(catchError(() => of([])))
     );
