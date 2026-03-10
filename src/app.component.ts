@@ -20,6 +20,7 @@ import { PatientAppointmentsComponent } from './components/patient-appointments/
 import { NotificationsComponent } from './components/notifications/notifications.component';
 import { ToastComponent } from './components/toast/toast.component';
 import { ProgramsEventsComponent } from './components/programs-events/programs-events.component';
+import { RecruitmentComponent } from './components/recruitment/recruitment.component';
 import { AuthService } from './services/auth.service';
 import { DataService } from './services/data.service';
 import { LanguageService } from './services/language.service';
@@ -28,7 +29,7 @@ import { PromptsComponent } from './components/prompts/prompts.component';
 import { ThemeService } from './services/theme.service';
 import { WidgetService } from './services/widget.service';
 
-type ViewType = 'dashboard' | 'knowledge' | 'links' | 'admin' | 'portfolio' | 'business_rules' | 'change_log' | 'patient_appointments' | 'service_orders' | 'user_knowledge_base' | 'procedures' | 'prompts' | 'contacts' | 'professionals' | 'calendars' | 'notifications' | 'programs_events';
+type ViewType = 'dashboard' | 'knowledge' | 'links' | 'admin' | 'portfolio' | 'business_rules' | 'change_log' | 'patient_appointments' | 'service_orders' | 'user_knowledge_base' | 'procedures' | 'prompts' | 'contacts' | 'professionals' | 'calendars' | 'notifications' | 'programs_events' | 'recruitment_dashboard' | 'recruitment_vacancies' | 'recruitment_candidates' | 'recruitment_pipeline' | 'recruitment_config';
 
 @Component({
   selector: 'app-root',
@@ -55,6 +56,7 @@ type ViewType = 'dashboard' | 'knowledge' | 'links' | 'admin' | 'portfolio' | 'b
     PatientAppointmentsComponent,
     NotificationsComponent,
     ProgramsEventsComponent,
+    RecruitmentComponent,
   ],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -83,6 +85,7 @@ export class AppComponent {
   isRepairBot = computed(() => this.selectedBot()?.botType === 'repair');
   isAestheticClinicBot = computed(() => this.selectedBot()?.botType === 'aesthetic_clinic');
   isProgramsEventsBot = computed(() => this.selectedBot()?.botType === 'programs_events');
+  isRecruitmentBot = computed(() => this.selectedBot()?.botType === 'recruitment');
   isUserKnowledgeBaseEnabled = computed(() => this.selectedBot()?.userKnowledgeBaseEnabled);
 
   constructor() {
@@ -142,7 +145,12 @@ export class AppComponent {
         (view === 'procedures' && bot.botType === 'programs_events') ||
         (view === 'professionals' && bot.botType === 'programs_events') ||
         (view === 'calendars' && bot.botType === 'programs_events') ||
-        (view === 'programs_events' && bot.botType !== 'programs_events');
+        (view === 'programs_events' && bot.botType !== 'programs_events') ||
+        (view === 'recruitment_dashboard' && bot.botType !== 'recruitment') ||
+        (view === 'recruitment_vacancies' && bot.botType !== 'recruitment') ||
+        (view === 'recruitment_candidates' && bot.botType !== 'recruitment') ||
+        (view === 'recruitment_pipeline' && bot.botType !== 'recruitment') ||
+        (view === 'recruitment_config' && bot.botType !== 'recruitment');
 
       if (isViewInvalid) {
         this.activeView.set('dashboard');

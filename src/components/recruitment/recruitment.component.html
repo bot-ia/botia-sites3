@@ -1,0 +1,952 @@
+<div class="space-y-6">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       DASHBOARD TAB
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'dashboard') {
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">{{ languageService.T('recruitmentDashboard') }}</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Resumen del proceso de reclutamiento</p>
+      </div>
+    </div>
+
+    @if (isLoadingDashboard()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+      </div>
+    } @else if (dashboard(); as dash) {
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Total Vacancies -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ languageService.T('vacancies') }}</p>
+          <p class="mt-2 text-3xl font-bold text-slate-800 dark:text-white">{{ dash.vacancies.total }}</p>
+          <div class="mt-3 flex items-center gap-3 text-sm">
+            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="text-slate-600 dark:text-slate-300">{{ dash.vacancies.open }} abiertas</span></span>
+            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span class="text-slate-600 dark:text-slate-300">{{ dash.vacancies.filled }} cubiertas</span></span>
+          </div>
+        </div>
+
+        <!-- Applications this week -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ languageService.T('thisWeek') }}</p>
+          <p class="mt-2 text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ dash.applications.this_week }}</p>
+          <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ languageService.T('applications') }} nuevas esta semana</p>
+        </div>
+
+        <!-- Avg AI Score -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ languageService.T('avgScore') }}</p>
+          <p class="mt-2 text-3xl font-bold"
+             [class.text-green-600]="dash.applications.avg_ai_score >= 75"
+             [class.dark:text-green-400]="dash.applications.avg_ai_score >= 75"
+             [class.text-yellow-600]="dash.applications.avg_ai_score >= 50 && dash.applications.avg_ai_score < 75"
+             [class.dark:text-yellow-400]="dash.applications.avg_ai_score >= 50 && dash.applications.avg_ai_score < 75"
+             [class.text-red-600]="dash.applications.avg_ai_score < 50"
+             [class.dark:text-red-400]="dash.applications.avg_ai_score < 50">
+            {{ dash.applications.avg_ai_score | number:'1.0-1' }}
+          </p>
+          <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">Score IA promedio (0–100)</p>
+        </div>
+
+        <!-- Candidates with CV -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ languageService.T('candidates') }}</p>
+          <p class="mt-2 text-3xl font-bold text-slate-800 dark:text-white">{{ dash.candidates.total }}</p>
+          <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ dash.candidates.with_cv }} {{ languageService.T('withCV') }}</p>
+        </div>
+      </div>
+
+      <!-- Applications by Status -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-5">{{ languageService.T('applications') }} por estado</h2>
+        <div class="space-y-3">
+          @for (status of applicationStatuses; track status) {
+            @if (getDashboardStatusCount(status) > 0) {
+              <div class="flex items-center gap-3">
+                <span class="w-28 text-xs text-right text-slate-600 dark:text-slate-400 shrink-0">{{ getStatusLabel(status) }}</span>
+                <div class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-5 overflow-hidden">
+                  <div class="h-5 rounded-full transition-all duration-500"
+                       [ngClass]="columnHeaderClass(status)"
+                       [style.width]="getStatusBarWidth(status)">
+                  </div>
+                </div>
+                <span class="w-8 text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0">{{ getDashboardStatusCount(status) }}</span>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Top Vacancies -->
+      @if (dash.top_vacancies.length > 0) {
+        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4">{{ languageService.T('topVacancies') }}</h2>
+          <table class="w-full text-sm text-left">
+            <thead class="text-xs text-slate-500 dark:text-slate-400 uppercase border-b border-slate-200 dark:border-slate-700">
+              <tr>
+                <th class="pb-3 pr-4">{{ languageService.T('vacancy') }}</th>
+                <th class="pb-3 pr-4 text-right">{{ languageService.T('applications') }}</th>
+                <th class="pb-3 text-right">{{ languageService.T('avgScore') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+              @for (tv of dash.top_vacancies; track tv.vacancy_id) {
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                  <td class="py-3 pr-4 font-medium text-slate-800 dark:text-white">{{ tv.title }}</td>
+                  <td class="py-3 pr-4 text-right text-slate-600 dark:text-slate-400">{{ tv.applications_count }}</td>
+                  <td class="py-3 text-right">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [ngClass]="scoreColorClass(tv.avg_score)">
+                      {{ tv.avg_score | number:'1.0-1' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-12 text-center">
+        <p class="text-slate-500 dark:text-slate-400">No hay datos de dashboard disponibles aún.</p>
+      </div>
+    }
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       VACANCIES TAB
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'vacancies') {
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">{{ languageService.T('recruitmentVacancies') }}</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestiona las vacantes del proceso de selección</p>
+      </div>
+      <button (click)="openNewVacancy()" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        {{ languageService.T('newVacancy') }}
+      </button>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 flex flex-col sm:flex-row gap-3">
+      <input
+        type="text"
+        [value]="vacancySearch()"
+        (input)="vacancySearch.set($any($event.target).value)"
+        placeholder="Buscar por título, departamento, ubicación..."
+        class="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+      />
+      <select
+        [value]="vacancyStatusFilter()"
+        (change)="vacancyStatusFilter.set($any($event.target).value)"
+        class="px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+        <option value="">Todos los estados</option>
+        @for (s of vacancyStatuses; track s) {
+          <option [value]="s">{{ getStatusLabel(s) }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Table -->
+    @if (isLoadingVacancies()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+      </div>
+    } @else if (filteredVacancies().length === 0) {
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-12 text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+        <p class="text-slate-500 dark:text-slate-400">{{ languageService.T('noVacanciesFound') }}</p>
+      </div>
+    } @else {
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-slate-500 dark:text-slate-400 uppercase border-b border-slate-200 dark:border-slate-700">
+            <tr>
+              <th class="px-4 py-3">{{ languageService.T('vacancy') }}</th>
+              <th class="px-4 py-3">{{ languageService.T('department') }}</th>
+              <th class="px-4 py-3">{{ languageService.T('location') }}</th>
+              <th class="px-4 py-3">{{ languageService.T('contractType') }}</th>
+              <th class="px-4 py-3">{{ languageService.T('status') }}</th>
+              <th class="px-4 py-3 text-right">{{ languageService.T('actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            @for (v of filteredVacancies(); track v.id) {
+              <!-- Row -->
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-slate-800 dark:text-white">{{ v.title }}</div>
+                  @if (v.skills && v.skills.length > 0) {
+                    <div class="flex flex-wrap gap-1 mt-1">
+                      @for (skill of v.skills.slice(0, 3); track skill) {
+                        <span class="px-1.5 py-0.5 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded">{{ skill }}</span>
+                      }
+                      @if (v.skills.length > 3) {
+                        <span class="px-1.5 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 rounded">+{{ v.skills.length - 3 }}</span>
+                      }
+                    </div>
+                  }
+                </td>
+                <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ v.department || '—' }}</td>
+                <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ v.location || '—' }}</td>
+                <td class="px-4 py-3 text-slate-600 dark:text-slate-400">
+                  @if (v.contract_type) {
+                    {{ getStatusLabel(v.contract_type) }}
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="vacancyStatusClass(v.status)">
+                    {{ getStatusLabel(v.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  @if (vacancyToDelete()?.id === v.id) {
+                    <div class="flex items-center justify-end gap-2">
+                      <span class="text-xs text-red-600 dark:text-red-400">¿Confirmar?</span>
+                      <button (click)="deleteVacancy()" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Sí</button>
+                      <button (click)="cancelDeleteVacancy()" class="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-300">No</button>
+                    </div>
+                  } @else {
+                    <div class="flex items-center justify-end gap-2">
+                      <button (click)="openEditVacancy(v)" class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md transition-colors" title="{{ languageService.T('edit') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                      </button>
+                      <button (click)="confirmDeleteVacancy(v)" class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors" title="{{ languageService.T('delete') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Vacancy Modal -->
+    @if (isVacancyModalOpen() && editingVacancy(); as vacancy) {
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-white">
+              {{ vacancy.id ? languageService.T('editVacancy') : languageService.T('newVacancy') }}
+            </h2>
+            <button (click)="closeVacancyModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div class="p-6 space-y-5">
+            <!-- Title -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('title') }} <span class="text-red-500">*</span></label>
+              <input type="text" [value]="vacancy.title || ''" (input)="updateEditingVacancy('title', $any($event.target).value)"
+                     class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Department -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('department') }}</label>
+                <input type="text" [value]="vacancy.department || ''" (input)="updateEditingVacancy('department', $any($event.target).value || null)"
+                       class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+              <!-- Location -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('location') }}</label>
+                <input type="text" [value]="vacancy.location || ''" (input)="updateEditingVacancy('location', $any($event.target).value || null)"
+                       class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Contract Type -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('contractType') }}</label>
+                <select [value]="vacancy.contract_type || ''" (change)="updateEditingVacancy('contract_type', $any($event.target).value || null)"
+                        class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                  <option value="">Sin especificar</option>
+                  @for (ct of contractTypes; track ct) {
+                    <option [value]="ct">{{ languageService.T('contractType_' + ct) }}</option>
+                  }
+                </select>
+              </div>
+              <!-- Status -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('status') }}</label>
+                <select [value]="vacancy.status" (change)="updateEditingVacancy('status', $any($event.target).value)"
+                        class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                  @for (s of vacancyStatuses; track s) {
+                    <option [value]="s">{{ getStatusLabel(s) }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <!-- Salary Range -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('salaryRange') }}</label>
+              <div class="flex gap-3 items-center">
+                <input type="number" placeholder="Mínimo" [value]="vacancy.salary_min ?? ''" (input)="updateEditingVacancy('salary_min', $any($event.target).value ? +$any($event.target).value : null)"
+                       class="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                <span class="text-slate-400">–</span>
+                <input type="number" placeholder="Máximo" [value]="vacancy.salary_max ?? ''" (input)="updateEditingVacancy('salary_max', $any($event.target).value ? +$any($event.target).value : null)"
+                       class="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('description') }}</label>
+              <textarea rows="3" [value]="vacancy.description || ''" (input)="updateEditingVacancy('description', $any($event.target).value || null)"
+                        class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-y"></textarea>
+            </div>
+
+            <!-- Requirements -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('requirements') }}</label>
+              <textarea rows="3" [value]="vacancy.requirements || ''" (input)="updateEditingVacancy('requirements', $any($event.target).value || null)"
+                        class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-y"></textarea>
+            </div>
+
+            <!-- Skills -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('skills') }}</label>
+              <div class="flex gap-2">
+                <input type="text" [value]="skillInput()" (input)="skillInput.set($any($event.target).value)"
+                       (keydown.enter)="addSkillToVacancy(); $event.preventDefault()"
+                       placeholder="{{ languageService.T('addSkill') }}..."
+                       class="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                <button type="button" (click)="addSkillToVacancy()" class="px-3 py-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-900/60 text-sm font-medium">
+                  Agregar
+                </button>
+              </div>
+              @if (vacancy.skills && vacancy.skills.length > 0) {
+                <div class="flex flex-wrap gap-2 mt-2">
+                  @for (skill of vacancy.skills; track skill) {
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs">
+                      {{ skill }}
+                      <button type="button" (click)="removeSkillFromVacancy(skill)" class="text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                      </button>
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Max Applications -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('maxApplications') }}</label>
+                <input type="number" [value]="vacancy.max_applications ?? ''" (input)="updateEditingVacancy('max_applications', $any($event.target).value ? +$any($event.target).value : null)"
+                       class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+              <!-- External Code -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('externalCode') }}</label>
+                <input type="text" [value]="vacancy.external_code || ''" (input)="updateEditingVacancy('external_code', $any($event.target).value || null)"
+                       class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+            <button type="button" (click)="closeVacancyModal()" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+              {{ languageService.T('cancel') }}
+            </button>
+            <button type="button" (click)="saveVacancy()" [disabled]="isSavingVacancy()"
+                    class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm">
+              {{ isSavingVacancy() ? languageService.T('loading') : languageService.T('save') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       CANDIDATES TAB
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'candidates') {
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">{{ languageService.T('recruitmentCandidates') }}</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Base de candidatos registrados</p>
+      </div>
+      <button (click)="openNewCandidate()" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        {{ languageService.T('newCandidate') }}
+      </button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+      <input
+        type="text"
+        [value]="candidateSearch()"
+        (input)="candidateSearch.set($any($event.target).value)"
+        placeholder="Buscar por nombre, teléfono o email..."
+        class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+      />
+    </div>
+
+    <!-- Table -->
+    @if (isLoadingCandidates()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+      </div>
+    } @else if (filteredCandidates().length === 0) {
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-12 text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+        <p class="text-slate-500 dark:text-slate-400">{{ languageService.T('noCandidatesFound') }}</p>
+      </div>
+    } @else {
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-slate-500 dark:text-slate-400 uppercase border-b border-slate-200 dark:border-slate-700">
+            <tr>
+              <th class="px-4 py-3">{{ languageService.T('candidate') }}</th>
+              <th class="px-4 py-3">{{ languageService.T('phoneNumber') }}</th>
+              <th class="px-4 py-3">{{ languageService.T('source') }}</th>
+              <th class="px-4 py-3">{{ languageService.T('aiProfileSummary') }}</th>
+              <th class="px-4 py-3">CV</th>
+              <th class="px-4 py-3 text-right">{{ languageService.T('actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            @for (c of filteredCandidates(); track c.id) {
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-slate-800 dark:text-white">{{ c.name }}</div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400">{{ c.email || '—' }}</div>
+                </td>
+                <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ c.phone_number }}</td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="sourceClass(c.source)">
+                    {{ languageService.T('source_' + c.source) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-slate-600 dark:text-slate-400 max-w-xs">
+                  @if (c.ai_profile_summary) {
+                    <p class="truncate text-xs">{{ c.ai_profile_summary }}</p>
+                  } @else {
+                    <span class="text-slate-400 text-xs">Sin resumen</span>
+                  }
+                </td>
+                <td class="px-4 py-3">
+                  @if (c.cv_url) {
+                    <a [href]="c.cv_url" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                      Ver CV
+                    </a>
+                  } @else {
+                    <span class="text-slate-400 text-xs">—</span>
+                  }
+                </td>
+                <td class="px-4 py-3 text-right">
+                  @if (candidateToDelete()?.id === c.id) {
+                    <div class="flex items-center justify-end gap-2">
+                      <span class="text-xs text-red-600 dark:text-red-400">¿Confirmar?</span>
+                      <button (click)="deleteCandidate()" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Sí</button>
+                      <button (click)="cancelDeleteCandidate()" class="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-300">No</button>
+                    </div>
+                  } @else {
+                    <div class="flex items-center justify-end gap-2">
+                      <button (click)="openViewCandidate(c)" class="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors" title="Ver detalles">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                      </button>
+                      <button (click)="openEditCandidate(c)" class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md transition-colors" title="{{ languageService.T('edit') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                      </button>
+                      <button (click)="confirmDeleteCandidate(c)" class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors" title="{{ languageService.T('delete') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Candidate View Modal -->
+    @if (viewingCandidate(); as c) {
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-white">{{ c.name }}</h2>
+            <button (click)="closeViewCandidate()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div class="p-6 space-y-5">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{{ languageService.T('phoneNumber') }}</p>
+                <p class="font-medium text-slate-800 dark:text-white">{{ c.phone_number }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Email</p>
+                <p class="font-medium text-slate-800 dark:text-white">{{ c.email || '—' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{{ languageService.T('source') }}</p>
+                <span class="px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="sourceClass(c.source)">{{ languageService.T('source_' + c.source) }}</span>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Registro</p>
+                <p class="font-medium text-slate-800 dark:text-white">{{ formatDate(c.created_at) }}</p>
+              </div>
+            </div>
+            @if (c.ai_profile_summary) {
+              <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-100 dark:border-indigo-800">
+                <p class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">{{ languageService.T('aiProfileSummary') }}</p>
+                <p class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ c.ai_profile_summary }}</p>
+              </div>
+            }
+            @if (c.cv_parsed_data) {
+              <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Datos del CV (parseados)</p>
+                <pre class="text-xs text-slate-600 dark:text-slate-400 overflow-auto max-h-48">{{ c.cv_parsed_data | json }}</pre>
+              </div>
+            }
+            @if (c.cv_url) {
+              <a [href]="c.cv_url" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-sm transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                Abrir CV
+              </a>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Candidate Create/Edit Modal -->
+    @if (isCandidateModalOpen() && editingCandidate(); as candidate) {
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-white">
+              {{ candidate.id ? languageService.T('editCandidate') : languageService.T('newCandidate') }}
+            </h2>
+            <button (click)="closeCandidateModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('name') }} <span class="text-red-500">*</span></label>
+              <input type="text" [value]="candidate.name || ''" (input)="updateEditingCandidate('name', $any($event.target).value)"
+                     class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('phoneNumber') }} <span class="text-red-500">*</span></label>
+              <input type="text" [value]="candidate.phone_number || ''" (input)="updateEditingCandidate('phone_number', $any($event.target).value)"
+                     placeholder="+573001234567"
+                     class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+              <input type="email" [value]="candidate.email || ''" (input)="updateEditingCandidate('email', $any($event.target).value || null)"
+                     class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('cvUrl') }}</label>
+              <input type="url" [value]="candidate.cv_url || ''" (input)="updateEditingCandidate('cv_url', $any($event.target).value || null)"
+                     class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('source') }}</label>
+              <select [value]="candidate.source || 'manual'" (change)="updateEditingCandidate('source', $any($event.target).value)"
+                      class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                @for (s of candidateSources; track s) {
+                  <option [value]="s">{{ languageService.T('source_' + s) }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+            <button type="button" (click)="closeCandidateModal()" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+              {{ languageService.T('cancel') }}
+            </button>
+            <button type="button" (click)="saveCandidate()" [disabled]="isSavingCandidate()"
+                    class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm">
+              {{ isSavingCandidate() ? languageService.T('loading') : languageService.T('save') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PIPELINE TAB (Kanban)
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'pipeline') {
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">{{ languageService.T('recruitmentPipeline') }}</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Pipeline visual de postulaciones por etapa</p>
+      </div>
+      <!-- Vacancy filter -->
+      <select
+        [value]="pipelineVacancyFilter()"
+        (change)="pipelineVacancyFilter.set($any($event.target).value)"
+        class="px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+        <option value="">Todas las vacantes</option>
+        @for (v of vacancies(); track v.id) {
+          <option [value]="v.id">{{ v.title }}</option>
+        }
+      </select>
+    </div>
+
+    @if (isLoadingApplications()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+      </div>
+    } @else {
+      <!-- Kanban Board -->
+      <div class="flex gap-4 overflow-x-auto pb-4">
+        @for (status of applicationStatuses; track status) {
+          <div class="flex-shrink-0 w-64 kanban-column">
+            <!-- Column Header -->
+            <div class="rounded-t-lg px-3 py-2.5 flex items-center justify-between" [ngClass]="columnHeaderClass(status)">
+              <span class="text-xs font-bold uppercase tracking-wider">{{ getStatusLabel(status) }}</span>
+              <span class="text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full bg-white/40 dark:bg-black/20">
+                {{ applicationsByStatus()[status]?.length || 0 }}
+              </span>
+            </div>
+
+            <!-- Cards Container -->
+            <div class="bg-slate-50 dark:bg-slate-900/50 rounded-b-lg border border-t-0 border-slate-200 dark:border-slate-700 min-h-40 space-y-2 p-2">
+              @for (app of applicationsByStatus()[status]; track app.id) {
+                <div
+                  (click)="openAppDetail(app)"
+                  class="bg-white dark:bg-slate-800 rounded-lg border border-l-4 border-slate-200 dark:border-slate-700 p-3 cursor-pointer hover:shadow-md transition-shadow"
+                  [ngClass]="columnCardBorderClass(status)">
+
+                  <!-- Candidate Name -->
+                  <p class="text-sm font-semibold text-slate-800 dark:text-white leading-tight">
+                    {{ app.candidate_name || getCandidateName(app.candidate_id) }}
+                  </p>
+
+                  <!-- Vacancy Title -->
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                    {{ app.vacancy_title || getVacancyTitle(app.vacancy_id) }}
+                  </p>
+
+                  <!-- Footer: Score + Date -->
+                  <div class="flex items-center justify-between mt-2">
+                    <!-- AI Score Badge -->
+                    <span class="px-1.5 py-0.5 rounded text-xs font-bold" [ngClass]="scoreColorClass(app.ai_score)">
+                      @if (app.ai_score !== null) {
+                        {{ app.ai_score }}
+                      } @else {
+                        —
+                      }
+                    </span>
+                    <!-- Date -->
+                    <span class="text-xs text-slate-400 dark:text-slate-500">{{ formatDate(app.created_at) }}</span>
+                  </div>
+
+                  <!-- Phone -->
+                  @if (app.candidate_phone) {
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ app.candidate_phone }}</p>
+                  }
+                </div>
+              }
+              @if (applicationsByStatus()[status]?.length === 0) {
+                <div class="flex items-center justify-center h-16 text-xs text-slate-400 dark:text-slate-600">
+                  Sin postulaciones
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Application Detail Modal -->
+    @if (isAppModalOpen() && editingApp(); as app) {
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-800 dark:text-white">
+                {{ app.candidate_name || getCandidateName(app.candidate_id) }}
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {{ app.vacancy_title || getVacancyTitle(app.vacancy_id) }}
+              </p>
+            </div>
+            <button (click)="closeAppModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-5">
+            <!-- Current Status + Score -->
+            <div class="flex items-center gap-3">
+              <span class="px-3 py-1 rounded-full text-xs font-bold" [ngClass]="columnHeaderClass(app.status)">
+                {{ getStatusLabel(app.status) }}
+              </span>
+              @if (app.ai_score !== null) {
+                <span class="px-3 py-1 rounded-full text-xs font-bold" [ngClass]="scoreColorClass(app.ai_score)">
+                  Score IA: {{ app.ai_score }}
+                </span>
+              }
+            </div>
+
+            <!-- AI Score Notes -->
+            @if (app.ai_score_notes) {
+              <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 border border-indigo-100 dark:border-indigo-800">
+                <p class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1">Notas del Score IA</p>
+                <p class="text-xs text-slate-600 dark:text-slate-300">{{ app.ai_score_notes }}</p>
+              </div>
+            }
+
+            <!-- Score button -->
+            <button
+              (click)="scoreApp(app)"
+              [disabled]="isScoringApp() === app.id"
+              class="w-full flex items-center justify-center gap-2 px-4 py-2 border border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+              @if (isScoringApp() === app.id) {
+                <div class="animate-spin h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+                Calculando...
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" /></svg>
+                {{ languageService.T('scoreApplication') }}
+              }
+            </button>
+
+            <!-- Change Status -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('changeStatus') }}</label>
+              <select [value]="appNewStatus()" (change)="appNewStatus.set($any($event.target).value)"
+                      class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                @for (s of applicationStatuses; track s) {
+                  <option [value]="s">{{ getStatusLabel(s) }}</option>
+                }
+                <option value="withdrawn">{{ getStatusLabel('withdrawn') }}</option>
+              </select>
+            </div>
+
+            <!-- Recruiter Notes -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('recruiterNotes') }}</label>
+              <textarea rows="3" [value]="appNewNotes()" (input)="appNewNotes.set($any($event.target).value)"
+                        class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-y"
+                        placeholder="Observaciones del reclutador..."></textarea>
+            </div>
+
+            <!-- Interview Date -->
+            @if (appNewStatus() === 'interview') {
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('interviewScheduled') }}</label>
+                <input type="datetime-local" [value]="appInterviewAt()" (input)="appInterviewAt.set($any($event.target).value)"
+                       class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+            }
+
+            <!-- Rejection Reason -->
+            @if (app.rejection_reason) {
+              <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-100 dark:border-red-800">
+                <p class="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">{{ languageService.T('rejectionReason') }}</p>
+                <p class="text-xs text-slate-600 dark:text-slate-300">{{ app.rejection_reason }}</p>
+              </div>
+            }
+
+            <!-- Stage History -->
+            @if (app.stage_history && app.stage_history.length > 0) {
+              <div>
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{{ languageService.T('stageHistory') }}</p>
+                <div class="space-y-1.5">
+                  @for (h of app.stage_history; track h.changed_at) {
+                    <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                      <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"></span>
+                      <span class="font-medium">{{ getStatusLabel(h.status) }}</span>
+                      <span class="text-slate-400">–</span>
+                      <span>{{ formatDate(h.changed_at) }}</span>
+                      @if (h.changed_by) {
+                        <span class="text-slate-400">por {{ h.changed_by }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Conversation Summary -->
+            @if (app.conversation_summary) {
+              <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Resumen de Conversación</p>
+                <p class="text-xs text-slate-600 dark:text-slate-300">{{ app.conversation_summary }}</p>
+              </div>
+            }
+          </div>
+
+          <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+            <button type="button" (click)="closeAppModal()" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+              {{ languageService.T('cancel') }}
+            </button>
+            <button type="button" (click)="updateAppStatus()" [disabled]="isSavingApplication()"
+                    class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm">
+              {{ isSavingApplication() ? languageService.T('loading') : languageService.T('save') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       CONFIG TAB
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'config') {
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">{{ languageService.T('recruitmentConfig') }}</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Configura la integración ATS, scoring IA y notificaciones</p>
+      </div>
+    </div>
+
+    @if (isLoadingConfig()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+      </div>
+    } @else {
+      <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 space-y-6 max-w-2xl">
+
+        <!-- ATS Integration -->
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Integración ATS</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('atsType') }}</label>
+              <select [value]="configForm().ats_type || 'none'" (change)="updateConfigForm('ats_type', $any($event.target).value)"
+                      class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                @for (at of atsTypes; track at) {
+                  <option [value]="at">{{ at }}</option>
+                }
+              </select>
+            </div>
+            @if (configForm().ats_type !== 'none') {
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('atsSyncWebhook') }}</label>
+                <input type="url" [value]="configForm().ats_sync_webhook_url || ''" (input)="updateConfigForm('ats_sync_webhook_url', $any($event.target).value || null)"
+                       placeholder="https://..."
+                       class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- CV & AI Scoring -->
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Inteligencia Artificial</h3>
+          <div class="space-y-4">
+            <!-- CV Parser -->
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ languageService.T('cvParserEnabled') }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Extrae automáticamente datos del CV del candidato</p>
+              </div>
+              <button type="button"
+                      (click)="updateConfigForm('cv_parser_enabled', !configForm().cv_parser_enabled)"
+                      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      [class.bg-indigo-600]="configForm().cv_parser_enabled"
+                      [class.bg-slate-200]="!configForm().cv_parser_enabled"
+                      [class.dark:bg-slate-700]="!configForm().cv_parser_enabled">
+                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      [class.translate-x-5]="configForm().cv_parser_enabled"
+                      [class.translate-x-0]="!configForm().cv_parser_enabled"></span>
+              </button>
+            </div>
+
+            <!-- AI Scoring -->
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ languageService.T('aiScoringEnabled') }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Puntúa automáticamente las postulaciones con IA</p>
+              </div>
+              <button type="button"
+                      (click)="updateConfigForm('ai_scoring_enabled', !configForm().ai_scoring_enabled)"
+                      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      [class.bg-indigo-600]="configForm().ai_scoring_enabled"
+                      [class.bg-slate-200]="!configForm().ai_scoring_enabled"
+                      [class.dark:bg-slate-700]="!configForm().ai_scoring_enabled">
+                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      [class.translate-x-5]="configForm().ai_scoring_enabled"
+                      [class.translate-x-0]="!configForm().ai_scoring_enabled"></span>
+              </button>
+            </div>
+
+            @if (configForm().ai_scoring_enabled) {
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Prompt de Scoring IA</label>
+                <textarea rows="4" [value]="configForm().ai_scoring_prompt || ''" (input)="updateConfigForm('ai_scoring_prompt', $any($event.target).value || null)"
+                          placeholder="Describe los criterios de evaluación para el scoring automático..."
+                          class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-y"></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('autoRejectBelowScore') }}</label>
+                <input type="number" min="0" max="100" [value]="configForm().auto_reject_below_score ?? ''" (input)="updateConfigForm('auto_reject_below_score', $any($event.target).value ? +$any($event.target).value : null)"
+                       placeholder="Ej: 30 (dejar vacío para deshabilitar)"
+                       class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Notificaciones</h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ languageService.T('notificationOnApply') }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Recibe un email al llegar una nueva postulación</p>
+              </div>
+              <button type="button"
+                      (click)="updateConfigForm('notification_on_apply', !configForm().notification_on_apply)"
+                      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      [class.bg-indigo-600]="configForm().notification_on_apply"
+                      [class.bg-slate-200]="!configForm().notification_on_apply"
+                      [class.dark:bg-slate-700]="!configForm().notification_on_apply">
+                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      [class.translate-x-5]="configForm().notification_on_apply"
+                      [class.translate-x-0]="!configForm().notification_on_apply"></span>
+              </button>
+            </div>
+            @if (configForm().notification_on_apply) {
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ languageService.T('notificationEmail') }}</label>
+                <input type="email" [value]="configForm().notification_email || ''" (input)="updateConfigForm('notification_email', $any($event.target).value || null)"
+                       placeholder="reclutador@empresa.com"
+                       class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="pt-2">
+          <button type="button" (click)="saveConfig()" [disabled]="isSavingConfig()"
+                  class="px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm">
+            {{ isSavingConfig() ? languageService.T('loading') : languageService.T('save') }}
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+</div>

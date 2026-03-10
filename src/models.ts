@@ -59,7 +59,7 @@ export interface BusinessRulesConfig {
   moto_limits: VehicleLimit[];
 }
 
-export type BotType = 'product' | 'appointment' | 'repair' | 'aesthetic_clinic' | 'programs_events';
+export type BotType = 'product' | 'appointment' | 'repair' | 'aesthetic_clinic' | 'programs_events' | 'recruitment';
 
 export interface CustomAttribute {
   key: string;
@@ -533,7 +533,94 @@ export interface EventMessageVariant {
 }
 
 
-export type ChangeLogEntity = 'Bot' | 'Prompt' | 'PortfolioItem' | 'KnowledgeItem' | 'SpecialLink' | 'BusinessRules' | 'ServiceOrder' | 'KnowledgeDocument' | 'Procedure' | 'Contact' | 'Professional' | 'Calendar' | 'PatientAppointment' | 'WATemplate' | 'NotificationConfig' | 'Campaign' | 'EventType' | 'Event' | 'EventSession' | 'EventMessageVariant' | 'EventRegistration';
+// === RECRUITMENT BOT MODELS ===
+export type VacancyStatus = 'open' | 'paused' | 'closed' | 'filled';
+export type ContractType = 'full_time' | 'part_time' | 'contract' | 'internship';
+export type CandidateSource = 'whatsapp' | 'web' | 'csv' | 'ats' | 'manual';
+export type ApplicationStatus = 'applied' | 'screening' | 'interview' | 'technical_test' | 'offer' | 'hired' | 'rejected' | 'withdrawn';
+
+export interface RecruitmentVacancy {
+  id: string;
+  bot_id: string;
+  title: string;
+  department: string | null;
+  description: string | null;
+  requirements: string | null;
+  skills: string[];
+  location: string | null;
+  contract_type: ContractType | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  status: VacancyStatus;
+  max_applications: number | null;
+  external_code: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecruitmentCandidate {
+  id: string;
+  bot_id: string;
+  contact_id: string | null;
+  name: string;
+  phone_number: string;
+  email: string | null;
+  cv_url: string | null;
+  cv_text: string | null;
+  cv_parsed_data: any | null;
+  ai_profile_summary: string | null;
+  attributes: Record<string, any>;
+  source: CandidateSource;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecruitmentApplication {
+  id: string;
+  bot_id: string;
+  vacancy_id: string;
+  candidate_id: string;
+  status: ApplicationStatus;
+  ai_score: number | null;
+  ai_score_notes: string | null;
+  ai_scored_at: string | null;
+  recruiter_notes: string | null;
+  interview_scheduled_at: string | null;
+  stage_history: { status: string; changed_at: string; changed_by: string }[];
+  conversation_summary: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  candidate_name?: string;
+  candidate_phone?: string;
+  vacancy_title?: string;
+}
+
+export interface RecruitmentConfig {
+  id: string;
+  bot_id: string;
+  ats_type: 'none' | 'kactus' | 'unitotals' | 'csv' | 'webhook';
+  ats_sync_webhook_url: string | null;
+  cv_parser_enabled: boolean;
+  ai_scoring_enabled: boolean;
+  ai_scoring_prompt: string | null;
+  auto_reject_below_score: number | null;
+  whatsapp_flow: any;
+  notification_on_apply: boolean;
+  notification_email: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecruitmentDashboard {
+  vacancies: { total: number; open: number; filled: number; paused: number; closed: number };
+  applications: { total: number; by_status: Record<string, number>; avg_ai_score: number; this_week: number };
+  candidates: { total: number; with_cv: number };
+  top_vacancies: { vacancy_id: string; title: string; applications_count: number; avg_score: number }[];
+}
+
+export type ChangeLogEntity = 'Bot' | 'Prompt' | 'PortfolioItem' | 'KnowledgeItem' | 'SpecialLink' | 'BusinessRules' | 'ServiceOrder' | 'KnowledgeDocument' | 'Procedure' | 'Contact' | 'Professional' | 'Calendar' | 'PatientAppointment' | 'WATemplate' | 'NotificationConfig' | 'Campaign' | 'EventType' | 'Event' | 'EventSession' | 'EventMessageVariant' | 'EventRegistration' | 'RecruitmentVacancy' | 'RecruitmentCandidate' | 'RecruitmentApplication';
 export type ChangeLogAction = 'Created' | 'Updated' | 'Deleted';
 
 export interface ChangeLog {

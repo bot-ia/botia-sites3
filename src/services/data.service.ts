@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment, NotificationHistory, EventType, Event, EventSession, EventMessageVariant, EventRegistration, SessionMetricsResponse } from '../models';
+import { Bot, Prompt, KnowledgeItem, SpecialLink, PortfolioItem, BusinessRulesConfig, ChangeLog, InteractionLog, ServiceOrder, KnowledgeDocument, Procedure, Contact, CsvImportResponse, Professional, Calendar, PatientAppointment, WATemplate, WATemplateDetail, TemplateParameter, NotificationConfig, Campaign, NotificationQueueItem, CampaignContact, ExecuteCampaignResponse, FilterableField, FilterCondition, SegmentationPreviewResult, SavedSegment, NotificationHistory, EventType, Event, EventSession, EventMessageVariant, EventRegistration, SessionMetricsResponse, RecruitmentVacancy, RecruitmentCandidate, RecruitmentApplication, RecruitmentConfig, RecruitmentDashboard } from '../models';
 import { ApiService } from './api.service';
 
 @Injectable({
@@ -465,6 +465,66 @@ export class DataService {
   async getNotificationQueue(botId: string, limit: number = 100): Promise<NotificationQueueItem[]> {
     const params = new HttpParams().set('limit', limit.toString());
     return this.get<NotificationQueueItem[]>(`${this.apiService.baseUrl}/bots/${botId}/notifications/queue/pending`, [], params);
+  }
+
+  // RECRUITMENT BOT
+  async getRecruitmentVacancies(botId: string, filters?: { status?: string; department?: string }): Promise<RecruitmentVacancy[]> {
+    let params = new HttpParams();
+    if (filters?.status) params = params.set('status', filters.status);
+    if (filters?.department) params = params.set('department', filters.department);
+    return this.get<RecruitmentVacancy[]>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/vacancies`, [], params);
+  }
+  async saveRecruitmentVacancy(botId: string, vacancy: Partial<RecruitmentVacancy>): Promise<RecruitmentVacancy> {
+    const request = vacancy.id
+      ? this.http.put<RecruitmentVacancy>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/vacancies/${vacancy.id}`, vacancy)
+      : this.http.post<RecruitmentVacancy>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/vacancies`, vacancy);
+    return firstValueFrom(request);
+  }
+  async deleteRecruitmentVacancy(botId: string, vacancyId: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/vacancies/${vacancyId}`));
+  }
+
+  async getRecruitmentCandidates(botId: string): Promise<RecruitmentCandidate[]> {
+    return this.get<RecruitmentCandidate[]>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/candidates`, []);
+  }
+  async saveRecruitmentCandidate(botId: string, candidate: Partial<RecruitmentCandidate>): Promise<RecruitmentCandidate> {
+    const request = candidate.id
+      ? this.http.put<RecruitmentCandidate>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/candidates/${candidate.id}`, candidate)
+      : this.http.post<RecruitmentCandidate>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/candidates`, candidate);
+    return firstValueFrom(request);
+  }
+  async deleteRecruitmentCandidate(botId: string, candidateId: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/candidates/${candidateId}`));
+  }
+
+  async getRecruitmentApplications(botId: string, filters?: { status?: string; vacancy_id?: string }): Promise<RecruitmentApplication[]> {
+    let params = new HttpParams();
+    if (filters?.status) params = params.set('status', filters.status);
+    if (filters?.vacancy_id) params = params.set('vacancy_id', filters.vacancy_id);
+    return this.get<RecruitmentApplication[]>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/applications`, [], params);
+  }
+  async saveRecruitmentApplication(botId: string, app: Partial<RecruitmentApplication>): Promise<RecruitmentApplication> {
+    const request = app.id
+      ? this.http.put<RecruitmentApplication>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/applications/${app.id}`, app)
+      : this.http.post<RecruitmentApplication>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/applications`, app);
+    return firstValueFrom(request);
+  }
+  async updateRecruitmentApplicationStatus(botId: string, appId: string, status: string, notes?: string, interviewAt?: string): Promise<RecruitmentApplication> {
+    return firstValueFrom(this.http.put<RecruitmentApplication>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/applications/${appId}/status`, { status, notes, interview_scheduled_at: interviewAt }));
+  }
+  async scoreRecruitmentApplication(botId: string, appId: string): Promise<RecruitmentApplication> {
+    return firstValueFrom(this.http.post<RecruitmentApplication>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/applications/${appId}/score`, {}));
+  }
+
+  async getRecruitmentDashboard(botId: string): Promise<RecruitmentDashboard | null> {
+    return this.get<RecruitmentDashboard | null>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/dashboard`, null);
+  }
+
+  async getRecruitmentConfig(botId: string): Promise<RecruitmentConfig | null> {
+    return this.get<RecruitmentConfig | null>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/config`, null);
+  }
+  async saveRecruitmentConfig(botId: string, config: Partial<RecruitmentConfig>): Promise<RecruitmentConfig> {
+    return firstValueFrom(this.http.put<RecruitmentConfig>(`${this.apiService.baseUrl}/bots/${botId}/recruitment/config`, config));
   }
 
   // AI-POWERED PARAMETER MAPPING
