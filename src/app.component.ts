@@ -135,7 +135,7 @@ export class AppComponent {
         (view === 'procedures' && bot.botType !== 'aesthetic_clinic') ||
         (view === 'professionals' && bot.botType !== 'aesthetic_clinic') ||
         (view === 'calendars' && bot.botType !== 'aesthetic_clinic') ||
-        (view === 'user_knowledge_base' && !bot.userKnowledgeBaseEnabled) ||
+        (view === 'user_knowledge_base' && !bot.userKnowledgeBaseEnabled && bot.botType !== 'recruitment') ||
         (view === 'knowledge' && (bot.botType === 'aesthetic_clinic' || bot.botType === 'programs_events')) ||
         (view === 'prompts' && (bot.botType === 'aesthetic_clinic' || bot.botType === 'programs_events')) ||
         (view === 'business_rules' && bot.botType === 'programs_events') ||

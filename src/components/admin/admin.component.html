@@ -283,7 +283,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div class="md:col-span-2">
             <label for="botType" class="block font-semibold mb-2">{{ languageService.T('botType') }}</label>
-            <select id="botType" name="botType" [(ngModel)]="bot.botType" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+            <select id="botType" name="botType" [(ngModel)]="bot.botType" (ngModelChange)="onBotTypeChange($event)" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-md p-3 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
               @for(type of botTypes; track type) {
                 <option [value]="type">{{ languageService.T('botType_' + type) }}</option>
               }

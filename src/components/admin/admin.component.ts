@@ -38,7 +38,7 @@ export class AdminComponent {
   isEditingExistingBot = signal(false);
   botSearchTerm = signal('');
   botSort = signal<{ column: 'nombre' | 'bot_id' | 'status', direction: 'asc' | 'desc' }>({ column: 'nombre', direction: 'asc' });
-  readonly botTypes: BotType[] = ['product', 'appointment', 'repair', 'aesthetic_clinic', 'programs_events'];
+  readonly botTypes: BotType[] = ['product', 'appointment', 'repair', 'aesthetic_clinic', 'programs_events', 'recruitment'];
 
   // Bot Delete State
   botToDelete = signal<Bot | null>(null);
@@ -162,6 +162,12 @@ export class AdminComponent {
 
   changeTab(tab: AdminTab) {
     this.selectedTab.set(tab);
+  }
+
+  onBotTypeChange(botType: BotType) {
+    // For new recruitment bots, enable user knowledge base by default.
+    if (this.isEditingExistingBot() || botType !== 'recruitment') return;
+    this.editingBot.update(bot => (bot ? { ...bot, userKnowledgeBaseEnabled: true } : bot));
   }
 
   // BOT CRUD
